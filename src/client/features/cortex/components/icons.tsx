@@ -9,13 +9,10 @@ export function CortexLogo({ size = 30 }: { size?: number }) {
         display: "block",
         position: "relative",
         overflow: "hidden",
-        borderRadius: Math.max(6, Math.round(size * 0.24)),
-        background: "#fff",
-        boxShadow: "inset 0 0 0 1px rgba(16,26,39,.06)",
       }}
     >
       <Image
-        src="/cortex-logo.png"
+        src="/cortex-logo-transparent.png"
         alt=""
         width={1254}
         height={1254}

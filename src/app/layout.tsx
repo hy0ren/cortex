@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   title: "Cortex",
   description: "Clinical report workspace",
   icons: {
-    icon: "/cortex-logo.png",
-    apple: "/cortex-logo.png",
+    icon: "/cortex-logo-transparent.png",
+    apple: "/cortex-logo-transparent.png",
   },
 };
 

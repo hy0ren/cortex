@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Hanken_Grotesk, IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
+import { FirebaseInit } from "@/client/components/firebase-init";
 import "./globals.css";
 
 const hanken = Hanken_Grotesk({
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${hanken.variable} ${sourceSerif.variable} ${ibmPlexMono.variable}`}>
+        <FirebaseInit />
         {children}
       </body>
     </html>

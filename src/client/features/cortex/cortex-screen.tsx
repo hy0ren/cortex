@@ -1,14 +1,14 @@
-import type { useCortexWorkspace } from "./model/use-cortex-workspace";
+"use client";
+
 import type { CortexScreen as Screen } from "./model/types";
+import type { CortexWorkspace } from "./model/use-cortex-workspace";
 import { HistoryScreen } from "./screens/history-screen";
 import { IntakeScreen } from "./screens/intake-screen";
 import { PipelineScreen } from "./screens/pipeline-screen";
 import { ReportScreen } from "./screens/report-screen";
 
-type WorkspaceModel = ReturnType<typeof useCortexWorkspace>;
-
 type CortexScreenProps = {
-  workspace: WorkspaceModel;
+  workspace: CortexWorkspace;
   onNavigate: (screen: Screen) => void;
 };
 

@@ -233,3 +233,5 @@ export function useCortexWorkspace(session: AuthSession) {
     transcribeFile, uploadFile, uploads,
   ]);
 }
+
+export type CortexWorkspace = ReturnType<typeof useCortexWorkspace>;

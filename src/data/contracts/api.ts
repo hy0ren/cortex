@@ -1,4 +1,5 @@
-import type { AgentStatus, GliaFlag, PatientRecord, ReportDraft } from ".";
+import type { AgentStatus, PatientRecord, ReportDraft } from "./domain";
+import type { GliaFlag } from "./cortex-ui";
 
 export type RuntimeMode = "configured" | "demo";
 

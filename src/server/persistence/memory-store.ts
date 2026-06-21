@@ -4,6 +4,7 @@ import type {
   PipelineRun,
   ReportDraft,
   UploadedAsset,
+  Encounter,
 } from "@/data/contracts";
 
 type MemoryStore = {
@@ -11,6 +12,7 @@ type MemoryStore = {
   drafts: Map<string, ReportDraft>;
   pipelines: Map<string, PipelineRun>;
   uploads: Map<string, UploadedAsset[]>;
+  encounters: Map<string, Encounter>;
 };
 
 const globalStore = globalThis as typeof globalThis & {
@@ -23,6 +25,7 @@ export function getMemoryStore(): MemoryStore {
     drafts: new Map(),
     pipelines: new Map(),
     uploads: new Map(),
+    encounters: new Map(),
   };
   return globalStore.__cortexMemoryStore;
 }

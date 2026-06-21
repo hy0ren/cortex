@@ -1,11 +1,16 @@
 "use client";
 
+import type { AuthUser } from "@/data/contracts";
+
 type TopBarProps = {
   listening: boolean;
   onToggleListen: () => void;
+  onExport: () => void;
+  onSignOut: () => Promise<void>;
+  user: AuthUser;
 };
 
-export function TopBar({ listening, onToggleListen }: TopBarProps) {
+export function TopBar({ listening, onToggleListen, onExport, onSignOut, user }: TopBarProps) {
   return (
     <>
       <header
@@ -94,6 +99,8 @@ export function TopBar({ listening, onToggleListen }: TopBarProps) {
           </div>
           <button
             type="button"
+            onClick={onExport}
+            aria-label="Export report"
             className="cortex-btn-hover"
             style={{
               width: 34,
@@ -111,6 +118,24 @@ export function TopBar({ listening, onToggleListen }: TopBarProps) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
             </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => void onSignOut()}
+            title={`Sign out ${user.email}`}
+            style={{
+              height: 34,
+              padding: "0 10px",
+              borderRadius: 8,
+              border: "1px solid #E5E8ED",
+              background: "#fff",
+              color: "#647082",
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Sign out
           </button>
         </div>
       </header>

@@ -1,13 +1,18 @@
 "use client";
 
 import type { GliaFlag } from "../model/types";
-import { TEST_RESULTS, flagStyle } from "@/data/demo/cortex";
+import type { PatientRecord, ReportDraft } from "@/data/contracts";
+import { flagStyle } from "@/data/demo/cortex";
 import { CheckIcon } from "../components/icons";
 
 type ReportScreenProps = {
   flags: GliaFlag[];
+  draft: ReportDraft;
+  patient: PatientRecord;
+  busy: boolean;
   onResolveFlag: (id: string) => void;
   onOpenExplain: () => void;
+  onFinalize: () => Promise<void>;
 };
 
 function classificationStyle(classification: string, warn?: boolean, alert?: boolean) {
@@ -16,7 +21,9 @@ function classificationStyle(classification: string, warn?: boolean, alert?: boo
   return { color: "#51607A", bg: "#EEF1F6" };
 }
 
-export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScreenProps) {
+export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpenExplain, onFinalize }: ReportScreenProps) {
+  const status = draft.status;
+  const age = Math.max(0, new Date().getFullYear() - new Date(patient.demographics.dateOfBirth).getFullYear());
   return (
     <div className="sa" style={{ flex: 1, overflowY: "auto", background: "#EFF1F4" }}>
       <div
@@ -49,7 +56,7 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
                 borderRadius: 20,
               }}
             >
-              Draft
+              {status === "finalized" ? "Final" : "Draft"}
             </span>
           </div>
           <div style={{ fontSize: 12, color: "#8A95A3", marginTop: 3 }}>Last edited just now · autosaved</div>
@@ -102,6 +109,8 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
           </button>
           <button
             type="button"
+            onClick={() => void onFinalize()}
+            disabled={busy || status === "finalized"}
             className="cortex-teal-btn"
             style={{
               height: 34,
@@ -115,13 +124,14 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
               cursor: "pointer",
             }}
           >
-            Finalize
+            {status === "finalized" ? "Finalized" : busy ? "Saving…" : "Finalize"}
           </button>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 26, padding: "30px 32px 60px", alignItems: "flex-start", maxWidth: 1180, margin: "0 auto" }}>
         <article
+          data-report-document
           style={{
             flex: 1,
             minWidth: 0,
@@ -167,7 +177,7 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
                 Neuropsychological Evaluation
               </h2>
               <div style={{ fontSize: 13, color: "#647082" }}>
-                Eleanor M. Hayes · 69 years · Right‑handed · 16 years education
+                {patient.demographics.name} · {age} years · {patient.demographics.handedness}-handed · {patient.demographics.education}
               </div>
             </div>
             <div
@@ -179,9 +189,9 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
                 lineHeight: 1.9,
               }}
             >
-              <div>MRN&nbsp;&nbsp;SYN‑4471</div>
-              <div>DOB&nbsp;&nbsp;14 Mar 1957</div>
-              <div>DOE&nbsp;&nbsp;18 Jun 2026</div>
+              <div>MRN&nbsp;&nbsp;{patient.mrn}</div>
+              <div>DOB&nbsp;&nbsp;{patient.demographics.dateOfBirth}</div>
+              <div>DOE&nbsp;&nbsp;{new Date(draft.updatedAt).toLocaleDateString()}</div>
               <div>Examiner&nbsp;&nbsp;L. Okafor, PhD</div>
             </div>
           </div>
@@ -189,24 +199,15 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
           {[
             {
               title: "Reason for Referral",
-              body: "Ms. Hayes is a 69‑year‑old, right‑handed woman with 16 years of education, referred by Neurology (R. Okonkwo, MD) for comprehensive neuropsychological evaluation. The referral concerns an eight‑month history of progressive memory difficulty and seeks to characterize her cognitive profile and help differentiate amnestic mild cognitive impairment from an early neurodegenerative process.",
+              body: draft.sections.reasonForReferral,
             },
             {
               title: "History of Presenting Concern",
-              body: (
-                <>
-                  The patient and her daughter report insidious onset of forgetfulness over the preceding{" "}
-                  <span style={{ background: "#FBF1DD", borderBottom: "2px solid #D9A441", padding: "0 2px", cursor: "pointer" }}>
-                    eight months
-                    <sup style={{ fontFamily: "var(--font-sans)", fontSize: 9, fontWeight: 700, color: "#B5803A", marginLeft: 1 }}>1</sup>
-                  </span>
-                  , most notable for misplaced items, repeated questions, and increasing reliance on written reminders. Instrumental activities of daily living remain largely independent, though her daughter assumed management of medications two months ago. Medical history is significant for hypertension and hypothyroidism, both stably treated; there is no history of stroke, head injury, or seizure. Family history includes a mother with late‑onset dementia.
-                </>
-              ),
+              body: draft.sections.history,
             },
             {
               title: "Behavioral Observations",
-              body: "Ms. Hayes presented as alert, cooperative, and appropriately groomed. Speech was fluent and prosodic with no paraphasic errors. She was oriented to person, place, and situation, with mild uncertainty for the exact date. Effort was adequate and performance‑validity indicators were within acceptable limits. She became mildly anxious during memory tasks but remained engaged throughout.",
+              body: draft.sections.behavioralObservations,
             },
           ].map((section) => (
             <section key={section.title} style={{ marginBottom: 26 }}>
@@ -233,7 +234,7 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
               Tests Administered
             </h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-              {["WAIS‑IV", "WMS‑IV", "RAVLT", "Trail Making A & B", "Boston Naming Test", "Verbal Fluency (FAS / Animals)", "Stroop", "MoCA"].map(
+              {[...new Set(patient.testBattery.map((score) => score.test))].map(
                 (test) => (
                   <span
                     key={test}
@@ -280,36 +281,38 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
                 </tr>
               </thead>
               <tbody>
-                {TEST_RESULTS.map((row) => {
-                  const cls = classificationStyle(row.classification, row.warn, row.alert);
+                {patient.testBattery.map((row) => {
+                  const alert = /borderline|impaired/i.test(row.classification);
+                  const warn = /low average/i.test(row.classification);
+                  const cls = classificationStyle(row.classification, warn, alert);
                   return (
                     <tr
-                      key={row.measure}
+                      key={`${row.test}-${row.subtest ?? ""}`}
                       style={{
                         borderBottom: "1px solid #EEF0F3",
-                        background: row.highlight ? "#FCF7EF" : undefined,
+                        background: alert ? "#FCF7EF" : undefined,
                       }}
                     >
-                      <td style={{ padding: "9px 10px 9px 0", color: "#1b2735", fontWeight: row.highlight ? 600 : 500 }}>
-                        {row.measure}
+                      <td style={{ padding: "9px 10px 9px 0", color: "#1b2735", fontWeight: alert ? 600 : 500 }}>
+                        {row.test}{row.subtest ? ` — ${row.subtest}` : ""}
                       </td>
                       <td
                         style={{
                           textAlign: "right",
                           padding: "9px 14px",
                           fontFamily: "var(--font-mono)",
-                          color: row.alert ? "#A85B2A" : "#1b2735",
-                          fontWeight: row.alert ? 500 : undefined,
+                          color: alert ? "#A85B2A" : "#1b2735",
+                          fontWeight: alert ? 500 : undefined,
                         }}
                       >
-                        {row.score}
+                        {row.standardScore}
                       </td>
                       <td
                         style={{
                           textAlign: "right",
                           padding: "9px 14px",
                           fontFamily: "var(--font-mono)",
-                          color: row.alert ? "#A85B2A" : "#647082",
+                          color: alert ? "#A85B2A" : "#647082",
                         }}
                       >
                         {row.percentile}
@@ -343,17 +346,7 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
               Interpretation
             </h3>
             <p style={{ fontFamily: "var(--font-serif)", fontSize: 14.5, lineHeight: 1.74, color: "#2b3542", margin: 0 }}>
-              Overall intellectual functioning falls within the Average range and is consistent with estimated premorbid ability. Against this backdrop, memory is{" "}
-              <span style={{ background: "#FBF1DD", borderBottom: "2px solid #D9A441", padding: "0 2px", cursor: "pointer" }}>
-                mildly reduced
-                <sup style={{ fontFamily: "var(--font-sans)", fontSize: 9, fontWeight: 700, color: "#B5803A", marginLeft: 1 }}>2</sup>
-              </span>{" "}
-              relative to other domains, with delayed verbal recall (RAVLT, WMS‑IV Delayed) falling in the Borderline range and limited benefit from recognition cueing — a pattern suggestive of an encoding‑type amnestic process. Processing speed and aspects of executive set‑shifting are mildly reduced (Low Average) and may be partly secondary to task memory demands. Language and visuospatial reasoning are intact. Affective contribution was{" "}
-              <span style={{ background: "#EBF0FB", borderBottom: "2px solid #6E93E0", padding: "0 2px", cursor: "pointer" }}>
-                not formally screened
-                <sup style={{ fontFamily: "var(--font-sans)", fontSize: 9, fontWeight: 700, color: "#2F5BD0", marginLeft: 1 }}>3</sup>
-              </span>{" "}
-              this visit. Taken together, the profile is most consistent with amnestic mild cognitive impairment; an early neurodegenerative etiology cannot be excluded and warrants surveillance.
+              {draft.sections.interpretation}
             </p>
           </section>
 
@@ -362,7 +355,7 @@ export function ReportScreen({ flags, onResolveFlag, onOpenExplain }: ReportScre
               Summary & Recommendations
             </h3>
             <p style={{ fontFamily: "var(--font-serif)", fontSize: 14.5, lineHeight: 1.74, color: "#2b3542", margin: "0 0 12px" }}>
-              Ms. Hayes demonstrates a circumscribed amnestic profile on a background of otherwise preserved cognition, most consistent with amnestic mild cognitive impairment. The following are recommended:
+              {draft.sections.summary}
             </p>
             <ol style={{ fontFamily: "var(--font-serif)", fontSize: 14.5, lineHeight: 1.7, color: "#2b3542", margin: 0, paddingLeft: 20 }}>
               {[

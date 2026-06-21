@@ -1,38 +1,64 @@
-import type { CortexScreen as Screen, GliaFlag } from "./model/types";
+import type { useCortexWorkspace } from "./model/use-cortex-workspace";
+import type { CortexScreen as Screen } from "./model/types";
 import { HistoryScreen } from "./screens/history-screen";
 import { IntakeScreen } from "./screens/intake-screen";
 import { PipelineScreen } from "./screens/pipeline-screen";
 import { ReportScreen } from "./screens/report-screen";
 
+type WorkspaceModel = ReturnType<typeof useCortexWorkspace>;
+
 type CortexScreenProps = {
-  screen: Screen;
-  flags: GliaFlag[];
+  workspace: WorkspaceModel;
   onNavigate: (screen: Screen) => void;
-  onResolveFlag: (id: string) => void;
-  onOpenExplain: () => void;
 };
 
-export function CortexScreen({
-  screen,
-  flags,
-  onNavigate,
-  onResolveFlag,
-  onOpenExplain,
-}: CortexScreenProps) {
-  switch (screen) {
+export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
+  if (!workspace.isReady || !workspace.patient || !workspace.draft) {
+    return <div style={{ flex: 1, display: "grid", placeItems: "center", color: "#647082" }}>Loading secure workspace…</div>;
+  }
+
+  switch (workspace.screen) {
     case "intake":
-      return <IntakeScreen onGoPipeline={() => onNavigate("pipeline")} />;
+      return (
+        <IntakeScreen
+          patient={workspace.patient}
+          uploads={workspace.uploads}
+          busy={workspace.busy}
+          onUpload={workspace.uploadFile}
+          onTranscribe={workspace.transcribeFile}
+          onGenerate={workspace.startPipeline}
+          onSaveDraft={workspace.saveDraft}
+        />
+      );
     case "report":
       return (
         <ReportScreen
-          flags={flags}
-          onResolveFlag={onResolveFlag}
-          onOpenExplain={onOpenExplain}
+          flags={workspace.flags}
+          draft={workspace.draft}
+          patient={workspace.patient}
+          busy={workspace.busy}
+          onResolveFlag={workspace.resolveFlag}
+          onOpenExplain={workspace.openExplanation}
+          onFinalize={workspace.finalizeDraft}
         />
       );
     case "history":
-      return <HistoryScreen onGoReport={() => onNavigate("report")} />;
+      return (
+        <HistoryScreen
+          onGoReport={() => onNavigate("report")}
+          onCompare={() => workspace.openExplanation()}
+          onOpenEncounter={() => onNavigate("report")}
+        />
+      );
     case "pipeline":
-      return <PipelineScreen onGoReport={() => onNavigate("report")} />;
+      return (
+        <PipelineScreen
+          run={workspace.pipeline}
+          busy={workspace.busy}
+          onTogglePause={workspace.togglePipeline}
+          onGoReport={() => onNavigate("report")}
+          onStart={workspace.startPipeline}
+        />
+      );
   }
 }

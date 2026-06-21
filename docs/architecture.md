@@ -20,6 +20,15 @@ Client modules may import `src/data`, but must not import `src/server`.
 Anthropic, Deepgram, Firebase Admin, Redis, Firestore drafts, and observability.
 Entry modules use `server-only` so accidental client imports fail at build time.
 
+Server integrations sit behind credential-aware services. Each service reports
+`configured` or `demo` mode through `/api/health`:
+
+- Firebase Admin verifies production ID tokens and persists report drafts.
+- Redis stores server sessions and patient history.
+- Anthropic generates report content at pipeline completion.
+- Deepgram transcribes uploaded visit audio.
+- In-memory adapters provide the same contracts when credentials are absent.
+
 ## Data
 
 `src/data/contracts` is the shared language between browser and server.
@@ -43,3 +52,26 @@ src/client/features/cortex/
 
 New behavior should enter through the feature model or a typed data contract,
 not through direct infrastructure calls from a screen component.
+
+## Authentication flow
+
+```text
+Login form
+  ├─ Firebase configured → Firebase ID token
+  └─ Demo mode → validated local credential
+          ↓
+POST /api/auth/session
+          ↓
+HTTP-only Cortex session cookie
+          ↓
+Redis session store or in-memory fallback
+```
+
+Client components never receive Redis credentials or Firebase Admin credentials.
+
+## Persistence lanes
+
+- Redis: authenticated sessions, patient records, history, and retrieval.
+- Firestore: live report drafts and review state only.
+- Memory fallback: development-only sessions, drafts, runs, and upload metadata.
+- Fixtures/demo: synthetic records and deterministic report content only.

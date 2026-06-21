@@ -2,6 +2,8 @@
 
 type HistoryScreenProps = {
   onGoReport: () => void;
+  onCompare: () => void;
+  onOpenEncounter: () => void;
 };
 
 type EncounterAction = "openDraft" | "compare" | "openReport" | "openNote";
@@ -54,7 +56,7 @@ const ENCOUNTERS: Encounter[] = [
   },
 ];
 
-export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
+export function HistoryScreen({ onGoReport, onCompare, onOpenEncounter }: HistoryScreenProps) {
   return (
     <div className="sa" style={{ flex: 1, overflowY: "auto", padding: "28px 32px 40px" }}>
       <div style={{ maxWidth: 920, margin: "0 auto" }}>
@@ -181,6 +183,7 @@ export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
                     {enc.actions.includes("compare") && (
                       <button
                         type="button"
+                        onClick={onCompare}
                         style={{
                           fontSize: 12,
                           fontWeight: 600,
@@ -198,6 +201,7 @@ export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
                     {(enc.actions.includes("openReport") || enc.actions.includes("openNote")) && (
                       <button
                         type="button"
+                        onClick={onOpenEncounter}
                         style={{
                           fontSize: 12,
                           fontWeight: 600,

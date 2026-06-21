@@ -1,13 +1,19 @@
 "use client";
 
+import type { AuthSession } from "@/data/contracts";
 import { Sidebar } from "./components/sidebar";
 import { TopBar } from "./components/top-bar";
 import { ExplainModal } from "./components/explain-modal";
 import { CortexScreen } from "./cortex-screen";
 import { useCortexWorkspace } from "./model/use-cortex-workspace";
 
-export function CortexApp() {
-  const workspace = useCortexWorkspace();
+type CortexAppProps = {
+  session: AuthSession;
+  onSignOut: () => Promise<void>;
+};
+
+export function CortexApp({ session, onSignOut }: CortexAppProps) {
+  const workspace = useCortexWorkspace(session);
 
   return (
     <div style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", background: "#F5F6F8" }}>
@@ -20,13 +26,13 @@ export function CortexApp() {
         <TopBar
           listening={workspace.listening}
           onToggleListen={workspace.toggleListening}
+          onExport={workspace.exportReport}
+          onSignOut={onSignOut}
+          user={session.user}
         />
         <CortexScreen
-          screen={workspace.screen}
-          flags={workspace.flags}
+          workspace={workspace}
           onNavigate={workspace.navigate}
-          onResolveFlag={workspace.resolveFlag}
-          onOpenExplain={workspace.openExplanation}
         />
       </main>
 
@@ -34,6 +40,28 @@ export function CortexApp() {
         open={workspace.explainOpen}
         onClose={workspace.closeExplanation}
       />
+      {workspace.message && (
+        <button
+          type="button"
+          onClick={workspace.clearMessage}
+          style={{
+            position: "fixed",
+            right: 22,
+            bottom: 22,
+            zIndex: 80,
+            border: "1px solid #CFE4DF",
+            borderRadius: 10,
+            background: "#F3FBF9",
+            color: "#0B6B60",
+            padding: "11px 14px",
+            boxShadow: "0 8px 28px rgba(16,26,39,.14)",
+            cursor: "pointer",
+            fontSize: 12.5,
+          }}
+        >
+          {workspace.message}
+        </button>
+      )}
     </div>
   );
 }

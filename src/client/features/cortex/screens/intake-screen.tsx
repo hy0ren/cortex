@@ -1,10 +1,18 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import type { PatientRecord, UploadedAsset } from "@/data/contracts";
 import { buildWaveBars } from "@/data/demo/cortex";
 import { ArrowRight, CheckIcon } from "../components/icons";
 
 type IntakeScreenProps = {
-  onGoPipeline: () => void;
+  patient: PatientRecord;
+  uploads: UploadedAsset[];
+  busy: boolean;
+  onUpload: (file: File) => Promise<void>;
+  onTranscribe: (file: File) => Promise<string>;
+  onGenerate: () => Promise<void>;
+  onSaveDraft: () => Promise<void>;
 };
 
 const TEST_FILES = [
@@ -13,8 +21,57 @@ const TEST_FILES = [
   { name: "EF_language_battery.xlsx", detail: "Trails, BNT, fluency, Stroop" },
 ];
 
-export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
+export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, onGenerate, onSaveDraft }: IntakeScreenProps) {
   const bars = buildWaveBars();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const recorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const [captureMode, setCaptureMode] = useState<"live" | "upload">("live");
+  const [recording, setRecording] = useState(false);
+  const [transcript, setTranscript] = useState(patient.visitTranscript);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!recording) return;
+    const timer = window.setInterval(() => setElapsedSeconds((current) => current + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [recording]);
+
+  async function selectFiles(files: FileList | null) {
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      if (file.type.startsWith("audio/")) {
+        const nextTranscript = await onTranscribe(file);
+        if (nextTranscript) setTranscript(nextTranscript);
+      }
+      await onUpload(file);
+    }
+  }
+
+  async function toggleRecording() {
+    if (recording) {
+      recorder.current?.stop();
+      recorder.current?.stream.getTracks().forEach((track) => track.stop());
+      setRecording(false);
+      return;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const nextRecorder = new MediaRecorder(stream);
+    audioChunks.current = [];
+    nextRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunks.current.push(event.data);
+    };
+    nextRecorder.onstop = () => {
+      const blob = new Blob(audioChunks.current, { type: nextRecorder.mimeType || "audio/webm" });
+      const file = new File([blob], `visit-${Date.now()}.webm`, { type: blob.type });
+      void selectFiles({ 0: file, length: 1, item: () => file } as unknown as FileList);
+    };
+    recorder.current = nextRecorder;
+    setElapsedSeconds(0);
+    nextRecorder.start();
+    setRecording(true);
+  }
 
   return (
     <div className="sa" style={{ flex: 1, overflowY: "auto", padding: "28px 32px 40px" }}>
@@ -54,31 +111,33 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
               <div style={{ display: "flex", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid #EEF0F3", gap: 8 }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1b2735" }}>Visit capture</span>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 4, background: "#F0F2F5", borderRadius: 8, padding: 3 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#fff", background: "#0E9C89", padding: "5px 12px", borderRadius: 6 }}>
+                  <button type="button" onClick={() => setCaptureMode("live")} style={{ border: 0, fontSize: 12, fontWeight: 600, color: captureMode === "live" ? "#fff" : "#647082", background: captureMode === "live" ? "#0E9C89" : "transparent", padding: "5px 12px", borderRadius: 6, cursor: "pointer" }}>
                     Live dictation
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#647082", padding: "5px 12px", borderRadius: 6, cursor: "pointer" }}>
+                  </button>
+                  <button type="button" onClick={() => { setCaptureMode("upload"); fileInput.current?.click(); }} style={{ border: 0, fontSize: 12, fontWeight: 600, color: captureMode === "upload" ? "#fff" : "#647082", background: captureMode === "upload" ? "#0E9C89" : "transparent", padding: "5px 12px", borderRadius: 6, cursor: "pointer" }}>
                     Upload
-                  </span>
+                  </button>
                 </div>
               </div>
               <div style={{ padding: "20px 18px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                   <button
                     type="button"
+                    onClick={() => void toggleRecording()}
+                    aria-label={recording ? "Stop dictation" : "Start dictation"}
                     style={{
                       width: 52,
                       height: 52,
                       borderRadius: "50%",
                       border: "none",
-                      background: "#C0524A",
+                      background: recording ? "#C0524A" : "#0E9C89",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
                       flex: "none",
                       boxShadow: "0 2px 8px rgba(192,82,74,.3)",
-                      animation: "ring 2s ease-out infinite",
+                      animation: recording ? "ring 2s ease-out infinite" : undefined,
                     }}
                   >
                     <span style={{ width: 15, height: 15, borderRadius: 3, background: "#fff" }} />
@@ -100,7 +159,7 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                       />
                     ))}
                   </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 17, color: "#1b2735", flex: "none" }}>14:22</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 17, color: "#1b2735", flex: "none" }}>{String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:{String(elapsedSeconds % 60).padStart(2, "0")}</div>
                 </div>
                 <div
                   style={{
@@ -125,9 +184,9 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                       marginBottom: 8,
                     }}
                   >
-                    LIVE TRANSCRIPT · WERNICKE LISTENING
+                    {recording ? "LIVE TRANSCRIPT · WERNICKE LISTENING" : "DICTATION PAUSED"}
                   </span>
-                  &ldquo;…she reports that the forgetfulness has been getting worse over the last several months. Her daughter notes she repeats questions and has been relying on notes. Daily activities are mostly intact, though medications are now managed by family
+                  &ldquo;{transcript}
                   <span
                     style={{
                       display: "inline-block",
@@ -156,10 +215,11 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
               <div style={{ display: "flex", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid #EEF0F3" }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1b2735" }}>Structured test data</span>
                 <span style={{ marginLeft: 8, fontSize: 11, color: "#0B7E70", background: "#E3F4F0", padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>
-                  3 files parsed
+                  {TEST_FILES.length + uploads.length} files parsed
                 </span>
                 <button
                   type="button"
+                  onClick={() => fileInput.current?.click()}
                   style={{
                     marginLeft: "auto",
                     fontSize: 12,
@@ -180,7 +240,7 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                 </button>
               </div>
               <div style={{ padding: "6px 18px 14px" }}>
-                {TEST_FILES.map((file, i) => (
+                {[...TEST_FILES, ...uploads.map((asset) => ({ name: asset.name, detail: asset.detail }))].map((file, i, files) => (
                   <div
                     key={file.name}
                     style={{
@@ -188,7 +248,7 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                       alignItems: "center",
                       gap: 12,
                       padding: "11px 0",
-                      borderBottom: i < TEST_FILES.length - 1 ? "1px solid #F2F4F6" : "none",
+                      borderBottom: i < files.length - 1 ? "1px solid #F2F4F6" : "none",
                     }}
                   >
                     <div
@@ -219,6 +279,15 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                   </div>
                 ))}
                 <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => fileInput.current?.click()}
+                  onKeyDown={(event) => event.key === "Enter" && fileInput.current?.click()}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    void selectFiles(event.dataTransfer.files);
+                  }}
                   style={{
                     marginTop: 8,
                     border: "1.5px dashed #D5DAE1",
@@ -231,6 +300,14 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                   <div style={{ fontSize: 12, fontWeight: 500, color: "#647082" }}>Drop additional score sheets</div>
                   <div style={{ fontSize: 11, marginTop: 2 }}>CSV, PDF, or XLSX · de‑identified on upload</div>
                 </div>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  multiple
+                  hidden
+                  accept=".csv,.pdf,.xlsx,.xls,.json,audio/*"
+                  onChange={(event) => void selectFiles(event.target.files)}
+                />
               </div>
             </div>
           </div>
@@ -250,11 +327,11 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
               </div>
               <div style={{ padding: "6px 18px 16px" }}>
                 {[
-                  ["Name", "Eleanor M. Hayes"],
-                  ["Age / Sex", "69 · Female"],
-                  ["Handedness", "Right"],
-                  ["Education", "16 years"],
-                  ["Referral", "Neurology · R. Okonkwo"],
+                  ["Name", patient.demographics.name],
+                  ["Sex", patient.demographics.sex],
+                  ["Handedness", patient.demographics.handedness],
+                  ["Education", patient.demographics.education],
+                  ["MRN", patient.mrn],
                 ].map(([label, value]) => (
                   <div
                     key={label}
@@ -272,7 +349,7 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                 <div style={{ padding: "10px 0" }}>
                   <span style={{ fontSize: 12.5, color: "#8A95A3", display: "block", marginBottom: 4 }}>Presenting concern</span>
                   <span style={{ fontSize: 12.5, color: "#3a4654", lineHeight: 1.5 }}>
-                    8‑month progressive memory decline; r/o amnestic MCI vs. early neurodegenerative.
+                    {patient.demographics.referralReason}
                   </span>
                 </div>
               </div>
@@ -309,7 +386,8 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
               ))}
               <button
                 type="button"
-                onClick={onGoPipeline}
+                onClick={() => void onGenerate()}
+                disabled={busy}
                 className="cortex-teal-btn"
                 style={{
                   width: "100%",
@@ -329,11 +407,13 @@ export function IntakeScreen({ onGoPipeline }: IntakeScreenProps) {
                   boxShadow: "0 2px 8px rgba(11,126,112,.25)",
                 }}
               >
-                Generate report
+                {busy ? "Starting pipeline…" : "Generate report"}
                 <ArrowRight size={16} />
               </button>
               <button
                 type="button"
+                onClick={() => void onSaveDraft()}
+                disabled={busy}
                 style={{
                   width: "100%",
                   height: 38,

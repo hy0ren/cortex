@@ -1,11 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 type ExplainModalProps = {
   open: boolean;
   onClose: () => void;
 };
 
 export function ExplainModal({ open, onClose }: ExplainModalProps) {
+  const [playing, setPlaying] = useState(false);
+  const patientExplanation = "Most parts of your thinking are working well. The main thing we noticed is memory for new information. This is not a final diagnosis on its own. The next step is follow-up with your neurologist and another check in about a year.";
+
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
+  function togglePlayback() {
+    if (!("speechSynthesis" in window)) return;
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(patientExplanation);
+    utterance.onend = () => setPlaying(false);
+    window.speechSynthesis.speak(utterance);
+    setPlaying(true);
+  }
+
   if (!open) return null;
 
   return (
@@ -61,6 +81,8 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 18 }}>
             <button
               type="button"
+              onClick={togglePlayback}
+              aria-label={playing ? "Stop explanation" : "Read explanation aloud"}
               style={{
                 width: 48,
                 height: 48,
@@ -75,7 +97,7 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="#0B7E70">
-                <path d="M7 5l12 7-12 7z" />
+                {playing ? <path d="M7 6h4v12H7zM13 6h4v12h-4z" /> : <path d="M7 5l12 7-12 7z" />}
               </svg>
             </button>
             <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 2, height: 30 }}>

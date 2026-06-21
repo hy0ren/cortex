@@ -4,8 +4,8 @@ import type { BandRoom } from "@/data/contracts";
 /**
  * Band — multi-agent collaboration room.
  *
- * Infrastructure stub: defines the shared room shape and collaboration protocol.
- * Orchestration logic (sequencing, inter-agent messaging, streaming) lives in the API layer.
+ * Defines the shared room shape and collaboration protocol consumed by the
+ * pipeline service and API routes.
  */
 export const BAND_SYSTEM_PROMPT = `You are Band, the orchestrator of a neuropsychological report generation room.
 

@@ -4,6 +4,7 @@ import { requireRequestSession } from "@/server/auth/request-session";
 import { fail, ok, routeError } from "@/server/http/api-response";
 import { getMemoryStore } from "@/server/persistence/memory-store";
 import { parseFileToTestScores } from "@/server/data/file-parser";
+import { getEncounter, storeEncounter } from "@/server/persistence/redis/encounter-store";
 
 export async function POST(request: Request) {
   try {
@@ -30,12 +31,23 @@ export async function POST(request: Request) {
           : "Validated and attached; structured parsing is pending",
     };
 
+    const encounterId = form.get("encounterId");
+    let encounter = null;
+    if (typeof encounterId === "string") {
+      encounter = await getEncounter(encounterId);
+    }
+
     if (kind === "scores") {
       try {
         const scores = await parseFileToTestScores(file);
         asset.status = "parsed";
-        asset.detail = `Successfully parsed ${scores.length} scores. Awaiting review.`;
+        asset.detail = `Successfully parsed ${scores.length} scores.`;
         asset.parsedScores = scores;
+
+        if (encounter && scores.length > 0) {
+          encounter.testBattery = [...(encounter.testBattery || []), ...scores];
+          await storeEncounter(encounter);
+        }
       } catch (err) {
         asset.status = "error";
         asset.detail = "Failed to parse file format.";

@@ -184,6 +184,7 @@ export function useCortexWorkspace(session: AuthSession) {
         body: JSON.stringify({
           patientId: workspace.patient.id,
           draftId: workspace.draft.id,
+          encounterId: workspace.encounter?.id,
         }),
       }),
       "Pipeline started."
@@ -262,6 +263,9 @@ export function useCortexWorkspace(session: AuthSession) {
   const uploadFile = useCallback(async (file: File) => {
     const form = new FormData();
     form.set("file", file);
+    if (workspace?.encounter) {
+      form.set("encounterId", workspace.encounter.id);
+    }
     const result = await runAction(
       () => apiRequest<{ asset: UploadedAsset }>("/api/uploads", {
         method: "POST",
@@ -270,11 +274,14 @@ export function useCortexWorkspace(session: AuthSession) {
       `${file.name} attached.`
     );
     if (result) setUploads((current) => [...current, result.asset]);
-  }, [runAction]);
+  }, [runAction, workspace]);
 
   const transcribeFile = useCallback(async (file: File): Promise<string> => {
     const form = new FormData();
     form.set("file", file);
+    if (workspace?.encounter) {
+      form.set("encounterId", workspace.encounter.id);
+    }
     const result = await runAction(
       () => apiRequest<{ result: { transcript: string }; mode: "configured" | "demo" }>("/api/transcribe", {
         method: "POST",

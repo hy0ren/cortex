@@ -4,11 +4,13 @@ import type { PatientRecord } from "@/data/contracts";
 import {
   BAND_AGENT_NAMES,
   bandAgentHandle,
+  getBandAgentApiKey,
   getBandAgentId,
   getBandRestApiKey,
   isBandFullyConfigured,
   type BandAgentName,
 } from "@/server/band/agent-credentials";
+import { bandAgentPersona } from "@/server/band/agent-personas";
 
 type BandRoom = {
   id: string;
@@ -32,12 +34,13 @@ export function isBandConfigured(): boolean {
   return isBandFullyConfigured();
 }
 
-function mentionPayload(agent: BandAgentName) {
+function mentionPayload(agent: BandAgentName, kind: "mention" | "reference" = "mention") {
   const handle = bandAgentHandle(agent).slice(1);
   return {
     id: getBandAgentId(agent),
     name: agent,
     handle,
+    kind,
   };
 }
 
@@ -47,7 +50,7 @@ async function addBandParticipant(roomId: string, agent: BandAgentName): Promise
     headers: bandHeaders(),
     body: JSON.stringify({
       participant: {
-        agent_id: getBandAgentId(agent),
+        participant_id: getBandAgentId(agent),
       },
     }),
     signal: AbortSignal.timeout(15_000),
@@ -71,7 +74,7 @@ export async function createReportRoom(input: {
     headers: bandHeaders(),
     body: JSON.stringify({
       chat: {
-        metadata: input,
+        title: `Cortex report ${input.sessionId.slice(0, 8)} · patient ${input.patientId}`,
       },
     }),
     signal: AbortSignal.timeout(15_000),
@@ -82,13 +85,14 @@ export async function createReportRoom(input: {
     throw new Error(`Band room create failed (${response.status}): ${body.slice(0, 200)}`);
   }
 
-  const data = (await response.json()) as {
+  const payload = (await response.json()) as {
+    data?: { id?: string; title?: string };
     id?: string;
     chat?: { id?: string; title?: string };
     chatroom_id?: string;
     name?: string;
   };
-  const id = data.id ?? data.chat?.id ?? data.chatroom_id;
+  const id = payload.data?.id ?? payload.id ?? payload.chat?.id ?? payload.chatroom_id;
   if (!id) throw new Error("Band room create returned no id");
 
   for (const agent of BAND_AGENT_NAMES) {
@@ -96,18 +100,30 @@ export async function createReportRoom(input: {
     await addBandParticipant(id, agent);
   }
 
-  return { id, name: data.chat?.title ?? data.name ?? "Cortex report room" };
+  return { id, name: payload.data?.title ?? payload.chat?.title ?? payload.name ?? "Cortex report room" };
 }
 
 export async function postBandMessage(input: {
   roomId: string;
   body: string;
   mentionAgents?: BandAgentName[];
+  selfMentionAgent?: BandAgentName;
+  asAgent?: BandAgentName;
 }): Promise<void> {
-  const mentions = (input.mentionAgents ?? []).map((agent) => mentionPayload(agent));
+  const agents = input.mentionAgents ?? [];
+  // Band requires at least one mention per message; when there's no next
+  // agent to hand off to, mention a participant other than the sender
+  // (Band rejects a message mentioning its own sender).
+  const mentions =
+    agents.length > 0
+      ? agents.map((agent) => mentionPayload(agent))
+      : input.selfMentionAgent
+        ? [mentionPayload(input.selfMentionAgent, "mention")]
+        : [];
+  const apiKey = input.asAgent ? getBandAgentApiKey(input.asAgent) : undefined;
   const response = await fetch(`${bandRestBase()}/chats/${input.roomId}/messages`, {
     method: "POST",
-    headers: bandHeaders(),
+    headers: bandHeaders(apiKey),
     body: JSON.stringify({
       message: {
         content: input.body,
@@ -135,9 +151,10 @@ export async function kickoffBandPipeline(input: {
       `Cortex pipeline ${input.runId} started for ${input.patient.demographics.name}.`,
       `Patient ID: ${input.patient.id}`,
       `Draft: ${input.draftId}`,
-      `${bandAgentHandle("wernicke")} ingest transcript and patient record, then hand off to Norm.`,
+      "Ingesting transcript and patient record, then handing off to Norm.",
     ].join("\n"),
-    mentionAgents: ["wernicke"],
+    mentionAgents: ["norm"],
+    asAgent: "wernicke",
   });
 }
 
@@ -170,28 +187,41 @@ export async function postBandHandoff(input: {
   summary: string;
 }): Promise<void> {
   const nextAgent = nextBandAgentName(input.fromAgent);
+  const persona = BAND_AGENT_NAMES.includes(input.fromAgent as BandAgentName)
+    ? bandAgentPersona(input.fromAgent as BandAgentName)
+    : null;
+  const intro = persona ? `${persona}\n\n` : "";
   const body =
     nextAgent === "complete"
-      ? `${input.fromAgent} finished. Pipeline complete. ${input.summary}`
-      : `${input.fromAgent} finished: ${input.summary}\n${bandAgentHandle(nextAgent)} please continue.`;
+      ? `${intro}${input.fromAgent} finished. Pipeline complete. ${input.summary}`
+      : `${intro}${input.fromAgent} finished: ${input.summary}\n${bandAgentHandle(nextAgent)} please continue.`;
 
   await postBandMessage({
     roomId: input.roomId,
     body,
     mentionAgents: nextAgent === "complete" ? [] : [nextAgent],
+    // Glia posts the final message itself, so it can't self-mention; loop
+    // Wernicke back in as the room owner instead.
+    selfMentionAgent: nextAgent === "complete" ? "wernicke" : undefined,
+    asAgent: BAND_AGENT_NAMES.includes(input.fromAgent as BandAgentName)
+      ? (input.fromAgent as BandAgentName)
+      : "wernicke",
   });
 }
 
 export async function listRoomMessages(
   roomId: string
 ): Promise<Array<{ content: string; created_at?: string }>> {
-  const response = await fetch(`${bandRestBase()}/chats/${roomId}/messages`, {
+  const response = await fetch(`${bandRestBase()}/chats/${roomId}/messages?status=all`, {
     headers: bandHeaders(),
     signal: AbortSignal.timeout(15_000),
   });
   if (!response.ok) return [];
-  const data = (await response.json()) as {
-    messages?: Array<{ content: string; created_at?: string }>;
+  type RawMessage = { content: string; inserted_at?: string; created_at?: string };
+  const payload = (await response.json()) as {
+    data?: RawMessage[];
+    messages?: RawMessage[];
   };
-  return data.messages ?? [];
+  const messages = payload.data ?? payload.messages ?? [];
+  return messages.map((m) => ({ content: m.content, created_at: m.created_at ?? m.inserted_at }));
 }

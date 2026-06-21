@@ -351,6 +351,11 @@ export function useCortexWorkspace(session: AuthSession) {
     setMessage("Report exported.");
   }, []);
 
+  const switchPatient = useCallback(() => {
+    window.history.pushState(null, "", window.location.pathname);
+    refreshWorkspace();
+  }, [refreshWorkspace]);
+
   const flags = useMemo<GliaFlag[]>(() => workspace?.flags ?? [], [workspace?.flags]);
   const patient = workspace?.patient ?? null;
   const encounter = workspace?.encounter ?? null;
@@ -389,12 +394,13 @@ export function useCortexWorkspace(session: AuthSession) {
     transcribeFile,
     saveTranscript,
     exportReport,
+    switchPatient,
     refreshWorkspace,
   }), [
     busy, draft, encounter, explainOpen, exportReport, finalizeDraft, flags, isReady,
     listening, loading, message, navStyle, patient, pipeline, refreshWorkspace,
-    resolveFlag, saveDraft, saveDraftSections, saveTranscript, screen, session, startPipeline, togglePipeline,
-    transcribeFile, uploadFile, uploads,
+    resolveFlag, saveDraft, saveDraftSections, saveTranscript, screen, session,
+    startPipeline, switchPatient, togglePipeline, transcribeFile, uploadFile, uploads,
   ]);
 }
 

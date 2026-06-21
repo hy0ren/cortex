@@ -1,6 +1,6 @@
 "use client";
 
-import type { PatientRecord, Encounter } from "@/data/contracts";
+import type { PatientRecord, Encounter, AuthUser } from "@/data/contracts";
 import type { CortexScreen, NavStyle } from "../model/types";
 import { patientAgeAndSex, patientInitials } from "../model/history-view";
 import { CortexLogo } from "./icons";
@@ -10,6 +10,8 @@ type SidebarProps = {
   encounter?: Encounter | null;
   onNavigate: (screen: CortexScreen) => void;
   navStyle: (key: CortexScreen) => NavStyle;
+  user?: AuthUser | null;
+  onSwitchPatient?: () => void;
 };
 
 function NavItem({
@@ -75,10 +77,24 @@ function NavItem({
   );
 }
 
-export function Sidebar({ patient, encounter, onNavigate, navStyle }: SidebarProps) {
+export function Sidebar({ patient, encounter, onNavigate, navStyle, user, onSwitchPatient }: SidebarProps) {
   const initials = patient ? patientInitials(patient.demographics.name) : "—";
   const name = patient?.demographics.name ?? "No patient loaded";
   const meta = patient ? patientAgeAndSex(patient) : "Select a session";
+
+  const doctorName = user?.displayName || "Lena Okafor";
+  const doctorInitials = (doctorName
+    .replace(/^(Dr\.|Dr)\s+/i, "")
+    .trim()
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("") || "LO").toUpperCase();
+
+  const formattedDoctorName = doctorName.toLowerCase().startsWith("dr.")
+    ? doctorName
+    : `Dr. ${doctorName}`;
   return (
     <aside
       style={{
@@ -212,6 +228,17 @@ export function Sidebar({ patient, encounter, onNavigate, navStyle }: SidebarPro
             </button>
           </div>
         )}
+        <div style={{ marginTop: encounter ? 4 : 12 }}>
+          <button
+            onClick={onSwitchPatient}
+            className="w-full text-left flex items-center justify-between text-xs font-medium text-cortex-fg-subtle hover:text-cortex-fg px-2 py-1.5 rounded-cortex-sm hover:bg-cortex-border-soft transition-colors"
+          >
+            <span>Switch Patient</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 16V4m0 0L3 8m4-4l4 4m9 4v12m0 0l-4-4m4 4l4-4" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div style={{ marginTop: "auto", padding: "var(--space-4) var(--space-4)", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
@@ -257,7 +284,7 @@ export function Sidebar({ patient, encounter, onNavigate, navStyle }: SidebarPro
               flex: "none",
             }}
           >
-            LO
+            {doctorInitials}
           </div>
           <div style={{ minWidth: 0, lineHeight: 1.25 }}>
             <div
@@ -270,7 +297,7 @@ export function Sidebar({ patient, encounter, onNavigate, navStyle }: SidebarPro
                 textOverflow: "ellipsis",
               }}
             >
-              Dr. Lena Okafor
+              {formattedDoctorName}
             </div>
             <div style={{ fontSize: 10, color: "#6B7789" }}>Clinical Neuropsychologist</div>
           </div>

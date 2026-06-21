@@ -32,6 +32,8 @@ export function CortexApp({ session, onSignOut }: CortexAppProps) {
         encounter={workspace.encounter}
         onNavigate={workspace.navigate}
         navStyle={workspace.navStyle}
+        user={session.user}
+        onSwitchPatient={workspace.switchPatient}
       />
 
       <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#F5F6F8" }}>

@@ -9,7 +9,6 @@ export type RuntimeCapabilities = {
   anthropic: RuntimeMode;
   deepgram: RuntimeMode;
   arize: RuntimeMode;
-  sentry: RuntimeMode;
 };
 
 export type AuthUser = {

@@ -6,4 +6,3 @@ export {
   recordGeneration,
   withAgentSpan,
 } from "./arize";
-export { captureAgentError, initSentryServer, Sentry } from "./sentry";

@@ -27,6 +27,5 @@ export function getRuntimeCapabilities(): RuntimeCapabilities {
       configured(process.env.ARIZE_API_KEY) === "configured"
         ? "configured"
         : "demo",
-    sentry: configured(process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN),
   };
 }

@@ -7,6 +7,7 @@ import "server-only";
 export type CortexEnv = {
   anthropic: {
     apiKey: string;
+    baseUrl: string;
     model: string;
   };
   deepgram: {
@@ -35,12 +36,6 @@ export type CortexEnv = {
     modelVersion: string;
     captureContent: boolean;
   };
-  sentry: {
-    dsn: string;
-    org: string;
-    project: string;
-    authToken: string;
-  };
   app: {
     url: string;
   };
@@ -59,6 +54,7 @@ export function getEnv(): CortexEnv {
   const env: CortexEnv = {
     anthropic: {
       apiKey: optionalEnv("ANTHROPIC_API_KEY"),
+      baseUrl: optionalEnv("ANTHROPIC_BASE_URL"),
       model: optionalEnv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
     },
     deepgram: {
@@ -86,12 +82,6 @@ export function getEnv(): CortexEnv {
       modelId: optionalEnv("ARIZE_MODEL_ID", "cortex-agents"),
       modelVersion: optionalEnv("ARIZE_MODEL_VERSION", "0.1.0"),
       captureContent: optionalEnv("ARIZE_CAPTURE_CONTENT") === "true",
-    },
-    sentry: {
-      dsn: optionalEnv("SENTRY_DSN", optionalEnv("NEXT_PUBLIC_SENTRY_DSN")),
-      org: optionalEnv("SENTRY_ORG"),
-      project: optionalEnv("SENTRY_PROJECT", "cortex"),
-      authToken: optionalEnv("SENTRY_AUTH_TOKEN"),
     },
     app: {
       url: optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),

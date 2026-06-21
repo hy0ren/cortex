@@ -170,7 +170,7 @@ export async function executePipelineAgent(
             patient,
             clinicalContext: wernickeNote?.clinicalContext ?? encounter.transcript,
             normativeInterpretation:
-              normNote?.overallProfile ??
+              (normNote ? JSON.stringify(normNote) : null) ??
               encounter.testBattery
                 .map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`)
                 .join("\n"),
@@ -210,7 +210,7 @@ export async function executePipelineAgent(
             const reviewInput = {
               draftSections: latestDraft.sections,
               clinicalContext: wernickeNote?.clinicalContext ?? encounter.transcript,
-              normativeInterpretation: normNote?.overallProfile ?? "",
+              normativeInterpretation: normNote ? JSON.stringify(normNote) : "",
               sourceTranscript: encounter.transcript,
               retrievedEvidence: engramEvidence.map((item) => ({
                 snippet: item.snippet,

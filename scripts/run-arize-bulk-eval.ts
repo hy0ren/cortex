@@ -43,7 +43,12 @@ const patientLimit = Math.max(
   1,
   Number(limitArg?.split("=")[1] ?? PATIENT_FIXTURES.length + 1)
 );
-const patients = [DEMO_ACTIVE_PATIENT, ...PATIENT_FIXTURES].slice(0, patientLimit);
+const offsetArg = process.argv.find((arg) => arg.startsWith("--offset="));
+const patientOffset = Math.max(0, Number(offsetArg?.split("=")[1] ?? 0));
+const patients = [DEMO_ACTIVE_PATIENT, ...PATIENT_FIXTURES].slice(
+  patientOffset,
+  patientOffset + patientLimit
+);
 const label =
   process.argv.find((arg) => arg.startsWith("--label="))?.split("=")[1] ??
   "unlabeled";
@@ -158,7 +163,7 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
   );
 
   const normativeInterpretation =
-    norm.output?.overallProfile ??
+    (norm.output ? JSON.stringify(norm.output) : null) ??
     encounter.testBattery
       .map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`)
       .join("\n");

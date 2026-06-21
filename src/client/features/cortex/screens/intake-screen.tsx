@@ -32,6 +32,7 @@ export function IntakeScreen({ patient, encounter, uploads, busy, onUpload, onTr
   const [recording, setRecording] = useState(false);
   const [transcript, setTranscript] = useState(encounter?.transcript ?? "");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
     if (!recording) return;
@@ -391,22 +392,77 @@ export function IntakeScreen({ patient, encounter, uploads, busy, onUpload, onTr
                   tabIndex={0}
                   onClick={() => fileInput.current?.click()}
                   onKeyDown={(event) => event.key === "Enter" && fileInput.current?.click()}
-                  onDragOver={(event) => event.preventDefault()}
+                  onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
                   onDrop={(event) => {
                     event.preventDefault();
+                    setDragActive(false);
                     void selectFiles(event.dataTransfer.files);
                   }}
                   style={{
-                    marginTop: "var(--space-2)",
-                    border: "1.5px dashed var(--cortex-border-stronger)",
-                    borderRadius: "var(--radius-md)",
-                    padding: "var(--space-4)",
+                    marginTop: "var(--space-3)",
+                    position: "relative",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "var(--space-7) var(--space-5)",
                     textAlign: "center",
-                    color: "var(--cortex-fg-ghost)",
+                    cursor: "pointer",
+                    overflow: "hidden",
+                    background: dragActive
+                      ? "linear-gradient(135deg, rgba(14,156,137,0.08) 0%, rgba(47,91,208,0.06) 100%)"
+                      : "linear-gradient(135deg, #f7f9fb 0%, #f0f4f8 100%)",
+                    border: `2px dashed ${dragActive ? "var(--cortex-teal)" : "var(--cortex-border-stronger)"}`,
+                    transition: "background 0.2s ease, border-color 0.2s ease, transform 0.15s ease",
+                    transform: dragActive ? "scale(1.01)" : "scale(1)",
                   }}
                 >
-                  <div style={{ fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--cortex-fg-subtle)" }}>Drop additional score sheets</div>
-                  <div style={{ fontSize: "var(--text-xs)", marginTop: 2 }}>CSV, PDF, or XLSX · validate files contain no unnecessary identifiers</div>
+                  {/* Upload icon */}
+                  <div style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "var(--radius-md)",
+                    background: dragActive
+                      ? "linear-gradient(135deg, var(--cortex-teal) 0%, #0b7e70 100%)"
+                      : "var(--cortex-surface)",
+                    border: `1.5px solid ${dragActive ? "transparent" : "var(--cortex-border-strong)"}`,
+                    boxShadow: dragActive
+                      ? "0 8px 24px rgba(14,156,137,0.35)"
+                      : "0 2px 8px rgba(16,26,39,0.08)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto var(--space-4)",
+                    transition: "all 0.2s ease",
+                  }}>
+                    <svg
+                      width="22" height="22" viewBox="0 0 24 24" fill="none"
+                      stroke={dragActive ? "#fff" : "var(--cortex-teal)"}
+                      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  </div>
+                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--cortex-ink-2)", marginBottom: 4 }}>
+                    {dragActive ? "Drop to upload" : "Drop score sheets here"}
+                  </div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", lineHeight: 1.5 }}>
+                    CSV, PDF, or XLSX &nbsp;·&nbsp;
+                    <span
+                      style={{ color: "var(--cortex-teal-dark)", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 2 }}
+                    >
+                      browse files
+                    </span>
+                  </div>
+                  <div style={{
+                    marginTop: "var(--space-3)",
+                    fontSize: 10,
+                    color: "var(--cortex-fg-ghost)",
+                    fontFamily: "var(--font-mono)",
+                    letterSpacing: "var(--tracking-mono-tight)",
+                  }}>
+                    De-identified before upload · files never leave your institution
+                  </div>
                 </div>
                 <input
                   ref={fileInput}

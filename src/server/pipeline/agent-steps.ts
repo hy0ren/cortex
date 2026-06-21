@@ -209,7 +209,15 @@ export async function runBrocaStep(input: {
     system: BROCA_SYSTEM_PROMPT,
     messages: [{ role: "user", content: message }],
   });
-  return { raw, output: parseAgentJson<BrocaOutput>(raw) };
+  const parsed = parseAgentJson<BrocaOutput>(raw);
+  const output =
+    parsed &&
+    parsed.sections &&
+    typeof parsed.sections === "object" &&
+    !Array.isArray(parsed.sections)
+      ? parsed
+      : null;
+  return { raw, output };
 }
 
 export async function runGliaStep(input: {

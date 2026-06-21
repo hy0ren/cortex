@@ -272,7 +272,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
           const engramEvidence = JSON.parse(latestDraft.agentNotes.engramEvidence ?? "[]");
           const clinicalContext = wernickeNote?.clinicalContext ?? encounter.transcript;
           const normativeInterpretation =
-            normNote?.overallProfile ??
+            (normNote ? JSON.stringify(normNote) : null) ??
             encounter.testBattery
               .map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`)
               .join("\n");
@@ -318,7 +318,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
             const gliaInput = {
               draftSections: latestDraft.sections,
               clinicalContext: wernickeNote?.clinicalContext ?? encounter.transcript,
-              normativeInterpretation: normNote?.overallProfile ?? "",
+              normativeInterpretation: normNote ? JSON.stringify(normNote) : "",
               sourceTranscript: encounter.transcript,
               retrievedEvidence: engramEvidence.map((item) => ({
                 snippet: item.snippet,

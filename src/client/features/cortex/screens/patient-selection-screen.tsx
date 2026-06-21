@@ -7,6 +7,8 @@ import { Input } from "@/client/components/ui/input";
 import { Label } from "@/client/components/ui/label";
 import { apiRequest } from "@/client/lib/api-client";
 
+import { GlobeLoader } from "@/client/components/ui/globe-loader";
+
 export function PatientSelectionScreen() {
   const [patients, setPatients] = useState<PatientRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +140,7 @@ export function PatientSelectionScreen() {
           ))}
 
           {loading && (
-            <div className="text-center text-cortex-fg-muted py-8">Loading patients...</div>
+            <GlobeLoader label="Loading patients..." showBackground={false} />
           )}
 
           {!loading && !error && patients.length === 0 && (

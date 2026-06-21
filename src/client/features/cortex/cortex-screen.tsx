@@ -1,5 +1,6 @@
 "use client";
 
+import { GlobeLoader } from "@/client/components/ui/globe-loader";
 import type { CortexScreen as Screen } from "./model/types";
 import type { CortexWorkspace } from "./model/use-cortex-workspace";
 import { HistoryScreen } from "./screens/history-screen";
@@ -14,7 +15,7 @@ type CortexScreenProps = {
 
 export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
   if (!workspace.isReady || !workspace.patient || !workspace.draft) {
-    return <div style={{ flex: 1, display: "grid", placeItems: "center", color: "#647082" }}>Loading…</div>;
+    return <GlobeLoader label="Loading..." showBackground={false} />;
   }
 
   switch (workspace.screen) {

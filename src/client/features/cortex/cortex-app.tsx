@@ -6,6 +6,7 @@ import { TopBar } from "./components/top-bar";
 import { ExplainModal } from "./components/explain-modal";
 import { CortexScreen } from "./cortex-screen";
 import { useCortexWorkspace } from "./model/use-cortex-workspace";
+import { GlobeLoader } from "@/client/components/ui/globe-loader";
 import { PatientSelectionScreen } from "./screens/patient-selection-screen";
 
 type CortexAppProps = {
@@ -17,7 +18,7 @@ export function CortexApp({ session, onSignOut }: CortexAppProps) {
   const workspace = useCortexWorkspace(session);
 
   if (workspace.loading) {
-    return <div className="flex h-screen items-center justify-center bg-cortex-bg text-cortex-fg-muted">Loading Cortex...</div>;
+    return <GlobeLoader label="Loading Cortex..." />;
   }
 
   if (!workspace.isReady || !workspace.patient) {

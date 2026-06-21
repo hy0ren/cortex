@@ -278,7 +278,7 @@ export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
             </tbody>
           </table>
           <p style={{ marginTop: "var(--space-4)", fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", lineHeight: 1.5 }}>
-            MoCA was not part of every encounter's battery — comparison is limited to visits where it was administered.
+            MoCA was not part of every encounter&apos;s battery — comparison is limited to visits where it was administered.
           </p>
           <Button type="button" variant="cortex-secondary" size="sm" onClick={() => setCompareOpen(false)} style={{ marginTop: "var(--space-4)" }}>
             Close

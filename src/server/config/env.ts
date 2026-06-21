@@ -7,8 +7,8 @@ import "server-only";
 export type CortexEnv = {
   anthropic: {
     apiKey: string;
-    model: string;
     baseUrl: string;
+    model: string;
   };
   deepgram: {
     apiKey: string;
@@ -60,8 +60,8 @@ export function getEnv(): CortexEnv {
   const env: CortexEnv = {
     anthropic: {
       apiKey: optionalEnv("ANTHROPIC_API_KEY", optionalEnv("TOKENROUTER_API_KEY")),
+      baseUrl: optionalEnv("ANTHROPIC_BASE_URL", optionalEnv("TOKENROUTER_BASE_URL")),
       model: optionalEnv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
-      baseUrl: optionalEnv("TOKENROUTER_BASE_URL"),
     },
     deepgram: {
       apiKey: optionalEnv("DEEPGRAM_API_KEY"),

@@ -97,7 +97,7 @@ export function TopBar({ listening, voiceSupported, onToggleListen, onExport, on
             }}
           >
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--cortex-teal)" }} />
-            HIPAA‑safe mode
+            Synthetic data mode
           </div>
           <Button type="button" variant="cortex-secondary" size="icon" onClick={onExport} aria-label="Export report">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

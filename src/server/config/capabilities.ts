@@ -16,6 +16,9 @@ export function getRuntimeCapabilities(): RuntimeCapabilities {
       configured(process.env.FIREBASE_SERVICE_ACCOUNT_JSON) === "configured"
         ? "configured"
         : "demo",
+    demoAuth:
+      process.env.NODE_ENV !== "production" ||
+      process.env.ALLOW_DEMO_AUTH === "true",
     redis:
       configured(process.env.REDIS_URL) === "configured" || redisCloudConfigured
         ? "configured"

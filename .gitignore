@@ -31,6 +31,7 @@ yarn-error.log*
 # env files
 .env
 .env*.local
+serviceAccountKey.json
 
 # typescript
 *.tsbuildinfo
@@ -41,3 +42,6 @@ next-env.d.ts
 
 # sentry
 .sentryclirc
+
+# agent skills (installed locally — npx skills add Arize-ai/arize-skills)
+.agents/

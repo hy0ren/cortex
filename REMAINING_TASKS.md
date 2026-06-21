@@ -14,7 +14,8 @@ Last audited: June 20, 2026.
 - [ ] Add `ANTHROPIC_API_KEY` to enable generated report sections. Until then,
   the pipeline deliberately retains deterministic demo report content.
 - [ ] Add `FIREBASE_SERVICE_ACCOUNT_JSON` for Firebase Admin authentication and
-  Firestore draft persistence. Confirm the required
+  Firestore draft persistence. Enable the Google sign-in provider, authorize the
+  deployment hostname, and confirm the required
   `clinicianId ASC, updatedAt DESC` Firestore composite index.
 - [ ] Add Sentry DSN, org, project, and auth token if production error reporting
   and source-map uploads are required.
@@ -42,7 +43,7 @@ Last audited: June 20, 2026.
   clinician, but there is no organization tenant model.
 - [ ] Add integration tests for auth, ownership boundaries, Redis fallback,
   uploads, transcription, pipeline completion, and draft finalization.
-- [ ] Add browser tests for registration/sign-in, intake, pause/resume,
+- [ ] Add browser tests for Google sign-in/demo access, intake, pause/resume,
   flag resolution, finalization, and export; run lint, typecheck, build, and
   tests in CI.
 

@@ -17,8 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
       idToken?: string;
-      email?: string;
-      password?: string;
+      demo?: boolean;
     };
     const user = await authenticateCredential(body);
     const session = await createSession(user);

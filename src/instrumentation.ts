@@ -11,6 +11,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     if (process.env.NEXT_PHASE !== "phase-production-build") {
       const { initArizeTracing } = await import("@/server/observability/arize");
+      // Exports agent spans to Arize and/or Sentry OTLP when configured.
       initArizeTracing();
     }
   }

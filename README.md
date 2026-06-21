@@ -13,7 +13,7 @@ This repo contains the Cortex frontend prototype plus server infrastructure.
 | LLM | Anthropic Claude Sonnet | Five-agent pipeline |
 | Speech | Deepgram Nova-2 Medical | Visit audio → transcript |
 | Memory | Redis | Patient history + vector retrieval |
-| Auth | Firebase Auth | Clinician login |
+| Auth | Firebase Auth + Google OAuth | Clinician login |
 | Drafts | Firestore | Live report drafts / session state only |
 | Observability | Arize (OTLP) + Sentry | Agent eval + error monitoring |
 
@@ -60,8 +60,7 @@ npm run dev
 
 The app is usable before credentials are added:
 
-- Sign in with any valid email and a password of at least 6 characters.
-- Create a development account with a name, email, and 8+ character password.
+- Enter the synthetic demo workspace without creating an account.
 - Sessions, drafts, pipeline state, and uploads use an in-memory development store.
 - Synthetic patient records and deterministic report content remain behind the same APIs used in configured mode.
 
@@ -118,13 +117,39 @@ See [`.env.example`](.env.example) for all required keys:
 - `ARIZE_SPACE_ID` + `ARIZE_API_KEY` — agent observability
 - `SENTRY_DSN` — error monitoring
 
+## Arize agent skills (Cursor)
+
+This repo can use the [Arize skills](https://github.com/Arize-ai/arize-skills) plugin
+for trace export, experiments, evaluators, and instrumentation workflows via the
+`ax` CLI. Skills install locally and are gitignored under `.agents/`.
+
+```bash
+# Install all 12 skills (Cursor auto-detected)
+npx skills add Arize-ai/arize-skills --skill "*" --yes
+
+# Update later
+npx skills update
+```
+
+Authenticate the `ax` CLI once (uses the same Arize API key as the app):
+
+```bash
+uv tool install arize-ax-cli   # or: pipx install arize-ax-cli
+ax profiles create --api-key "$ARIZE_API_KEY"
+export ARIZE_SPACE="$ARIZE_SPACE_ID"   # space name or base64 ID from .env.local
+```
+
+Useful prompts after install:
+
+- **Instrument tracing:** follow https://arize.com/docs/PROMPT.md (or invoke `arize-instrumentation`)
+- **Debug traces:** `use the arize-trace skill to export and analyze recent traces from my project`
+
 ## Implemented API surface
 
 | Route | Purpose |
 |-------|---------|
 | `GET /api/health` | Runtime capability and readiness check |
 | `GET/POST/DELETE /api/auth/session` | Cookie-backed clinician sessions |
-| `POST /api/auth/register` | Firebase or development account registration |
 | `GET /api/patients` | Patient index (Redis with fixture fallback) |
 | `GET /api/patients/:id` | Patient record |
 | `GET /api/workspace` | Patient, draft, QA, pipeline, and capability state |
@@ -134,8 +159,15 @@ See [`.env.example`](.env.example) for all required keys:
 | `POST /api/uploads` | Validate and attach session files |
 | `POST /api/transcribe` | Deepgram transcription with deterministic fallback |
 
-Firebase Auth provides identity when configured. The server exchanges the Firebase
-ID token for an HTTP-only Cortex session, stored in Redis when available.
+Firebase Google OAuth provides identity when configured. The server verifies the
+Firebase ID token and exchanges it for an HTTP-only Cortex session, stored in
+Redis when available. Demo access is available in development and can be enabled
+for a deployed judging environment with `ALLOW_DEMO_AUTH=true`.
+
+Before deploying, enable **Google** under Firebase Console → Authentication →
+Sign-in method, then add the deployment hostname under Authentication →
+Settings → Authorized domains. Keep `ALLOW_DEMO_AUTH=false` for a normal
+production deployment.
 
 ## Next steps
 

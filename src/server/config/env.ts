@@ -38,6 +38,7 @@ export type CortexEnv = {
   };
   sentry: {
     dsn: string;
+    otlpEndpoint: string;
     org: string;
     project: string;
     authToken: string;
@@ -91,6 +92,7 @@ export function getEnv(): CortexEnv {
     },
     sentry: {
       dsn: optionalEnv("SENTRY_DSN", optionalEnv("NEXT_PUBLIC_SENTRY_DSN")),
+      otlpEndpoint: optionalEnv("SENTRY_OTLP_ENDPOINT"),
       org: optionalEnv("SENTRY_ORG"),
       project: optionalEnv("SENTRY_PROJECT", "cortex"),
       authToken: optionalEnv("SENTRY_AUTH_TOKEN"),

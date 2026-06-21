@@ -56,9 +56,9 @@ not through direct infrastructure calls from a screen component.
 ## Authentication flow
 
 ```text
-Login form
-  ├─ Firebase configured → Firebase ID token
-  └─ Demo mode → validated local credential
+Login
+  ├─ Google OAuth → Firebase ID token
+  └─ Explicit demo access → synthetic clinician identity
           ↓
 POST /api/auth/session
           ↓

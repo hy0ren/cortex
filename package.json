@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint .",
     "seed:redis": "node --conditions=react-server --import tsx scripts/seed-redis.ts",
+    "check:keys": "node --conditions=react-server --import tsx scripts/check-api-keys.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -2,14 +2,14 @@ import "server-only";
 import type { AuthUser } from "@/data/contracts";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { getAdminAuth } from "./firebase-admin";
-import { authenticateDemoUser } from "./user-store";
 
 export async function authenticateCredential(input: {
   idToken?: string;
-  email?: string;
-  password?: string;
+  demo?: boolean;
 }): Promise<AuthUser> {
-  if (input.idToken && getRuntimeCapabilities().firebase === "configured") {
+  const capabilities = getRuntimeCapabilities();
+
+  if (input.idToken && capabilities.firebase === "configured") {
     const token = await getAdminAuth().verifyIdToken(input.idToken);
     return {
       id: token.uid,
@@ -19,11 +19,14 @@ export async function authenticateCredential(input: {
     };
   }
 
-  if (!input.email || !input.password) {
-    throw new Error("Email and password are required");
+  if (input.demo && capabilities.demoAuth) {
+    return {
+      id: "demo-lena-okafor-cortex-local",
+      email: "lena.okafor@cortex.local",
+      displayName: "Lena Okafor",
+      role: "clinician",
+    };
   }
-  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_AUTH !== "true") {
-    throw new Error("Firebase authentication is not configured");
-  }
-  return authenticateDemoUser(input.email, input.password);
+
+  throw new Error("A valid Google sign-in is required");
 }

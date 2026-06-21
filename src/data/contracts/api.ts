@@ -5,6 +5,7 @@ export type RuntimeMode = "configured" | "demo";
 
 export type RuntimeCapabilities = {
   firebase: RuntimeMode;
+  demoAuth: boolean;
   redis: RuntimeMode;
   anthropic: RuntimeMode;
   deepgram: RuntimeMode;

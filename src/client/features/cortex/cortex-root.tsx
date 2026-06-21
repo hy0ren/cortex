@@ -13,8 +13,8 @@ export function CortexRoot() {
         capabilities={auth.capabilities}
         loading={auth.loading}
         error={auth.error}
-        onSignIn={auth.signIn}
-        onRegister={auth.register}
+        onGoogleSignIn={auth.signInWithGoogle}
+        onEnterDemo={auth.enterDemo}
       />
     );
   }

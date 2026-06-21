@@ -1,11 +1,19 @@
 import { context, trace, SpanStatusCode, type Span } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
-import { BasicTracerProvider, BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import {
+  BasicTracerProvider,
+  BatchSpanProcessor,
+  type SpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import "server-only";
 import type { AgentId } from "@/data/contracts";
 import { getEnv } from "@/server/config/env";
+import {
+  createSentryOtlpExporter,
+  isSentryOtlpConfigured,
+} from "@/server/observability/sentry-otlp";
 
 let provider: BasicTracerProvider | null = null;
 
@@ -22,30 +30,51 @@ export function isArizeConfigured(): boolean {
   return arizeConfig() !== null;
 }
 
-/** Initialize OpenTelemetry exporter pointed at Arize Phoenix/AX. No-op if unconfigured. */
+function buildSpanProcessors(): SpanProcessor[] {
+  const processors: SpanProcessor[] = [];
+
+  const arize = arizeConfig();
+  if (arize) {
+    processors.push(
+      new BatchSpanProcessor(
+        new OTLPTraceExporter({
+          url: "https://otlp.arize.com/v1/traces",
+          headers: {
+            space_id: arize.spaceId,
+            api_key: arize.apiKey,
+          },
+        })
+      )
+    );
+  }
+
+  const sentryExporter = createSentryOtlpExporter();
+  if (sentryExporter) {
+    processors.push(new BatchSpanProcessor(sentryExporter));
+  }
+
+  return processors;
+}
+
+/** Initialize OpenTelemetry agent tracing (Arize and/or Sentry OTLP). */
 export function initArizeTracing(): BasicTracerProvider | null {
   if (provider) return provider;
 
-  const arize = arizeConfig();
-  if (!arize) return null;
+  const spanProcessors = buildSpanProcessors();
+  if (spanProcessors.length === 0) return null;
 
-  const exporter = new OTLPTraceExporter({
-    url: "https://otlp.arize.com/v1/traces",
-    headers: {
-      space_id: arize.spaceId,
-      api_key: arize.apiKey,
-    },
-  });
-
+  const { arize } = getEnv();
   const resource = resourceFromAttributes({
     "service.name": "cortex",
     "model_id": arize.modelId,
     "model_version": arize.modelVersion,
+    ...(isSentryOtlpConfigured() && { "telemetry.backend.sentry": true }),
+    ...(isArizeConfigured() && { "telemetry.backend.arize": true }),
   });
 
   const nodeProvider = new NodeTracerProvider({
     resource,
-    spanProcessors: [new BatchSpanProcessor(exporter)],
+    spanProcessors,
   });
 
   nodeProvider.register();

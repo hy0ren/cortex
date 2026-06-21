@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as signOutFirebase,
 } from "firebase/auth";
 import type { AuthSession, RuntimeCapabilities } from "@/data/contracts";
 import { apiRequest } from "@/client/lib/api-client";
@@ -29,22 +29,47 @@ export function useAuth() {
       .finally(() => setLoading(false));
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let idToken: string | undefined;
-      if (capabilities?.firebase === "configured") {
-        const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
-        idToken = await credential.user.getIdToken();
+      if (capabilities?.firebase !== "configured") {
+        throw new Error("Google sign-in is not configured yet");
       }
+
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const credential = await signInWithPopup(getFirebaseAuth(), provider);
+      const idToken = await credential.user.getIdToken();
       const result = await apiRequest<{ session: AuthSession }>("/api/auth/session", {
         method: "POST",
-        body: JSON.stringify({ email, password, idToken }),
+        body: JSON.stringify({ idToken }),
       });
       setSession(result.session);
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Unable to sign in";
+      const message = cause instanceof Error ? cause.message : "Unable to sign in with Google";
+      setError(message);
+      throw cause;
+    } finally {
+      setLoading(false);
+    }
+  }, [capabilities]);
+
+  const enterDemo = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!capabilities?.demoAuth) {
+        throw new Error("Demo access is not enabled");
+      }
+
+      const result = await apiRequest<{ session: AuthSession }>("/api/auth/session", {
+        method: "POST",
+        body: JSON.stringify({ demo: true }),
+      });
+      setSession(result.session);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Unable to enter the demo";
       setError(message);
       throw cause;
     } finally {
@@ -53,41 +78,23 @@ export function useAuth() {
   }, [capabilities]);
 
   const signOut = useCallback(async () => {
-    await apiRequest<{ signedOut: boolean }>("/api/auth/session", { method: "DELETE" });
-    setSession(null);
-  }, []);
-
-  const register = useCallback(async (
-    displayName: string,
-    email: string,
-    password: string
-  ) => {
-    setLoading(true);
-    setError(null);
     try {
-      let idToken: string | undefined;
-      if (capabilities?.firebase === "configured") {
-        const credential = await createUserWithEmailAndPassword(
-          getFirebaseAuth(),
-          email,
-          password
-        );
-        await updateProfile(credential.user, { displayName });
-        idToken = await credential.user.getIdToken(true);
-      }
-      const result = await apiRequest<{ session: AuthSession }>("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ displayName, email, password, idToken }),
-      });
-      setSession(result.session);
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "Unable to create account";
-      setError(message);
-      throw cause;
+      await apiRequest<{ signedOut: boolean }>("/api/auth/session", { method: "DELETE" });
     } finally {
-      setLoading(false);
+      if (capabilities?.firebase === "configured") {
+        await signOutFirebase(getFirebaseAuth()).catch(() => undefined);
+      }
+      setSession(null);
     }
   }, [capabilities]);
 
-  return { session, capabilities, loading, error, signIn, register, signOut };
+  return {
+    session,
+    capabilities,
+    loading,
+    error,
+    signInWithGoogle,
+    enterDemo,
+    signOut,
+  };
 }

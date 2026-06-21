@@ -107,6 +107,9 @@ export function ExplainModal({ open, onClose, patientFirstName, summaryText }: E
         style={{
           width: 560,
           maxWidth: "100%",
+          maxHeight: "calc(100vh - 48px)",
+          display: "flex",
+          flexDirection: "column",
           background: "var(--cortex-surface)",
           borderRadius: "var(--radius-xl)",
           overflow: "hidden",
@@ -120,6 +123,7 @@ export function ExplainModal({ open, onClose, patientFirstName, summaryText }: E
             padding: "var(--space-6) var(--space-6)",
             color: "#fff",
             position: "relative",
+            flexShrink: 0,
           }}
         >
           <div
@@ -183,16 +187,29 @@ export function ExplainModal({ open, onClose, patientFirstName, summaryText }: E
             </span>
           </div>
         </div>
-        <div style={{ padding: "var(--space-6) var(--space-6)" }}>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            padding: "var(--space-6) var(--space-6)",
+          }}
+        >
           {explanation.split(/\n+/).filter(Boolean).map((para, i) => (
             <p key={i} className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: i === 0 ? "0 0 var(--space-4)" : "0 0 var(--space-4)" }}>
               {para}
             </p>
           ))}
-          <div
-            className="flex items-center gap-2"
-            style={{ marginTop: "var(--space-5)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--cortex-border-soft)" }}
-          >
+        </div>
+        <div
+          className="flex items-center gap-2"
+          style={{
+            flexShrink: 0,
+            padding: "var(--space-4) var(--space-6) var(--space-6)",
+            borderTop: "1px solid var(--cortex-border-soft)",
+            background: "var(--cortex-surface)",
+          }}
+        >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-fg-ghost)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="9" />
               <path d="M12 8v4M12 16h.01" />
@@ -203,7 +220,6 @@ export function ExplainModal({ open, onClose, patientFirstName, summaryText }: E
             <Button type="button" variant="cortex-primary" size="sm" onClick={onClose}>
               Done
             </Button>
-          </div>
         </div>
       </div>
     </div>

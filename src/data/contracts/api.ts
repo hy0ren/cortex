@@ -1,4 +1,4 @@
-import type { AgentStatus, PatientRecord, ReportDraft } from "./domain";
+import type { AgentStatus, PatientRecord, ReportDraft, Encounter } from "./domain";
 import type { GliaFlag } from "./cortex-ui";
 
 export type RuntimeMode = "configured" | "demo";
@@ -58,6 +58,7 @@ export type PipelineRun = {
   id: string;
   clinicianId: string;
   patientId: string;
+  encounterId: string;
   draftId: string;
   phase: PipelinePhase;
   progress: number;
@@ -71,8 +72,16 @@ export type PipelineRun = {
 
 export type ReportWorkspace = {
   patient: PatientRecord;
+  encounter?: Encounter;
   draft: ReportDraft;
   flags: GliaFlag[];
   pipeline: PipelineRun | null;
   capabilities: RuntimeCapabilities;
+};
+
+export type PipelineControlAction = {
+  action: "start" | "pause" | "resume" | "retry" | "refresh";
+  patientId: string;
+  encounterId: string;
+  draftId?: string;
 };

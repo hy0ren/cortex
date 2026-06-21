@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { PatientRecord, UploadedAsset } from "@/data/contracts";
+import type { PatientRecord, UploadedAsset, Encounter } from "@/data/contracts";
 import { buildWaveBars } from "@/data/demo/cortex";
 import { ArrowRight, CheckIcon } from "../components/icons";
 import { Button } from "@/client/components/ui/button";
 
 type IntakeScreenProps = {
   patient: PatientRecord;
+  encounter: Encounter | null;
   uploads: UploadedAsset[];
   busy: boolean;
   onUpload: (file: File) => Promise<void>;
@@ -22,14 +23,14 @@ const TEST_FILES = [
   { name: "EF_language_battery.xlsx", detail: "Trails, BNT, fluency, Stroop" },
 ];
 
-export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, onGenerate, onSaveDraft }: IntakeScreenProps) {
+export function IntakeScreen({ patient, encounter, uploads, busy, onUpload, onTranscribe, onGenerate, onSaveDraft }: IntakeScreenProps) {
   const bars = buildWaveBars();
   const fileInput = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const [captureMode, setCaptureMode] = useState<"live" | "upload">("live");
   const [recording, setRecording] = useState(false);
-  const [transcript, setTranscript] = useState(patient.visitTranscript);
+  const [transcript, setTranscript] = useState(encounter?.transcript ?? "");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {

@@ -15,6 +15,17 @@ export {
   storePatient,
 } from "./patient-store";
 export {
+  storeEncounter,
+  getEncounter,
+  listEncountersForPatient,
+} from "./encounter-store";
+export {
+  storePipelineRun,
+  getPipelineRunFromRedis,
+  acquirePipelineLock,
+  releasePipelineLock,
+} from "./pipeline-store";
+export {
   clearNormativeStore,
   countNormativeChunks,
   searchNormativeContext,

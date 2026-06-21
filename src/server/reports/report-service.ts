@@ -4,18 +4,27 @@ import { createDemoDraft, getDemoFlags } from "@/data/demo/workspace";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { findPatient } from "@/server/persistence/patient-repository";
 import { getReportDraft, upsertReportDraft } from "@/server/persistence/drafts";
-import { getMemoryStore } from "@/server/persistence/memory-store";
+import { getEncounter } from "@/server/persistence/redis/encounter-store";
+import { getPipelineRunFromRedis } from "@/server/persistence/redis/pipeline-store";
 
 export async function getWorkspace(
   clinicianId: string,
-  patientId = "pat-demo-hayes",
-  draftId?: string
-): Promise<ReportWorkspace> {
-  const patient = await findPatient(patientId);
+  patientId?: string,
+  draftId?: string,
+  encounterId?: string
+): Promise<ReportWorkspace | null> {
+  if (!patientId && !encounterId) return null;
+
+  const resolvedPatientId = patientId ?? (encounterId ? (await getEncounter(encounterId))?.patientId : undefined);
+  if (!resolvedPatientId) throw new Error("Patient ID required");
+
+  const patient = await findPatient(resolvedPatientId);
   if (!patient) throw new Error("Patient not found");
+  
+  const encounter = encounterId ? await getEncounter(encounterId) : undefined;
 
   const resolvedDraftId =
-    draftId ?? `draft-${patientId}-${clinicianId}`.replace(/[^a-zA-Z0-9_-]/g, "-");
+    draftId ?? `draft-${patient.id}-${clinicianId}`.replace(/[^a-zA-Z0-9_-]/g, "-");
   let draft = await getReportDraft(resolvedDraftId);
   if (draft && draft.clinicianId !== clinicianId) {
     throw new Error("Draft not found");
@@ -29,14 +38,12 @@ export async function getWorkspace(
   }
 
   const flags = parseFlags(draft);
-  const pipeline = [...getMemoryStore().pipelines.values()]
-    .find(
-      (run) =>
-        run.draftId === draft.id && run.clinicianId === clinicianId
-    ) ?? null;
+  const pipelineId = draft.agentNotes.pipelineId;
+  const pipeline = pipelineId ? await getPipelineRunFromRedis(pipelineId) : null;
 
   return {
     patient,
+    encounter: encounter ?? undefined,
     draft,
     flags,
     pipeline,

@@ -11,6 +11,8 @@ export type {
   AgentId,
   AgentStatus,
   BandRoom,
+  Encounter,
+  PatientIntake,
   HistoryChunk,
   NormativeChunk,
   NormativeSearchResult,

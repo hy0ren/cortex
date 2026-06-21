@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useState, type ChangeEvent } from "react";
-import type { GliaFlag } from "../model/types";
-import type { PatientRecord, ReportDraft } from "@/data/contracts";
+import type { GliaFlag, PatientRecord, ReportDraft, Encounter, TestScore } from "@/data/contracts";
 import { flagStyle } from "@/data/demo/cortex";
 import { CheckIcon } from "../components/icons";
 import { Button } from "@/client/components/ui/button";
@@ -12,6 +11,7 @@ type ReportScreenProps = {
   flags: GliaFlag[];
   draft: ReportDraft;
   patient: PatientRecord;
+  encounter: Encounter | null;
   busy: boolean;
   onResolveFlag: (id: string, resolution: "confirmed" | "dismissed") => void;
   onOpenExplain: () => void;
@@ -62,7 +62,17 @@ function FlagMarkers({ flags }: { flags: GliaFlag[] }) {
   );
 }
 
-export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpenExplain, onFinalize, onSaveSections }: ReportScreenProps) {
+export function ReportScreen({
+  flags,
+  draft,
+  patient,
+  encounter,
+  busy,
+  onResolveFlag,
+  onOpenExplain,
+  onFinalize,
+  onSaveSections,
+}: ReportScreenProps) {
   const status = draft.status;
   const age = Math.max(0, new Date().getFullYear() - new Date(patient.demographics.dateOfBirth).getFullYear());
   const flagsBySection = (section: string) => flags.filter((f) => f.section === section);
@@ -246,7 +256,7 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
               Tests Administered
             </h3>
             <div className="flex flex-wrap gap-[7px]">
-              {[...new Set(patient.testBattery.map((score) => score.test))].map((test) => (
+              {[...new Set((encounter?.testBattery ?? []).map((score) => score.test))].map((test) => (
                 <span
                   key={test}
                   style={{
@@ -289,31 +299,31 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {patient.testBattery.map((row) => {
-                  const alert = /borderline|impaired/i.test(row.classification);
-                  const warn = /low average/i.test(row.classification);
+              <tbody className="divide-y divide-[var(--cortex-border-soft)]">
+                {(encounter?.testBattery ?? []).map((score: TestScore, i: number) => {
+                  const alert = /borderline|impaired/i.test(score.classification);
+                  const warn = /low average/i.test(score.classification);
                   const cls = classificationStyle(warn, alert);
                   return (
                     <tr
-                      key={`${row.test}-${row.subtest ?? ""}`}
-                      style={{ borderBottom: "1px solid var(--cortex-border-soft)", background: alert ? "#fcf7ef" : undefined }}
+                      key={`${score.test}-${score.subtest ?? i}`}
+                      className="hover:bg-[var(--cortex-surface-hover)] transition-colors"
                     >
                       <td style={{ padding: "9px 10px 9px 0", color: "var(--cortex-ink-2)", fontWeight: alert ? 600 : 500 }}>
-                        {row.test}
-                        {row.subtest ? ` — ${row.subtest}` : ""}
+                        <div className="font-medium text-[var(--cortex-ink-2)]">{score.test}</div>
+                        {score.subtest && <div className="text-xs text-[var(--cortex-fg-ghost)] mt-0.5">{score.subtest}</div>}
                       </td>
                       <td
                         className="font-mono"
                         style={{ textAlign: "right", padding: "9px 14px", color: alert ? "var(--cortex-alert)" : "var(--cortex-ink-2)", fontWeight: alert ? 500 : undefined }}
                       >
-                        {row.standardScore}
+                        {score.standardScore}
                         {(warn || alert) && (
                           <span style={{ fontSize: 9, color: "var(--cortex-fg-ghost)", marginLeft: 3 }}>±SEM</span>
                         )}
                       </td>
                       <td className="font-mono" style={{ textAlign: "right", padding: "9px 14px", color: alert ? "var(--cortex-alert)" : "var(--cortex-fg-subtle)" }}>
-                        {row.percentile}
+                        {score.percentile}
                       </td>
                       <td style={{ padding: "9px 0 9px 14px" }}>
                         <span
@@ -326,7 +336,7 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
                             borderRadius: "var(--radius-xs)",
                           }}
                         >
-                          {row.classification}
+                          {score.classification}
                         </span>
                       </td>
                     </tr>
@@ -334,6 +344,11 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
                 })}
               </tbody>
             </table>
+            {!(encounter?.testBattery?.length) && (
+              <div className="p-8 text-center text-sm text-[var(--cortex-fg-ghost)] border-t border-[var(--cortex-border-soft)]">
+                No standardized scores available
+              </div>
+            )}
             <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-ghost)", marginTop: "var(--space-3)", fontStyle: "italic" }}>
               Standard scores: M = 100, SD = 15, age‑corrected. Classification per Heaton conventions. SEM applied; bands indicate confidence, not point
               certainty.

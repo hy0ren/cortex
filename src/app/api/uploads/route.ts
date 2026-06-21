@@ -3,6 +3,7 @@ import type { UploadedAsset } from "@/data/contracts";
 import { requireRequestSession } from "@/server/auth/request-session";
 import { fail, ok, routeError } from "@/server/http/api-response";
 import { getMemoryStore } from "@/server/persistence/memory-store";
+import { parseFileToTestScores } from "@/server/data/file-parser";
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
       : /\.(csv|xlsx?|json)$/i.test(file.name)
         ? "scores"
         : "document";
-    const asset: UploadedAsset = {
+    const asset: UploadedAsset & { parsedScores?: any[] } = {
       id: randomUUID(),
       name: file.name,
       kind,
@@ -28,6 +29,19 @@ export async function POST(request: Request) {
           ? "Ready for transcription"
           : "Validated and attached; structured parsing is pending",
     };
+
+    if (kind === "scores") {
+      try {
+        const scores = await parseFileToTestScores(file);
+        asset.status = "parsed";
+        asset.detail = `Successfully parsed ${scores.length} scores. Awaiting review.`;
+        asset.parsedScores = scores;
+      } catch (err) {
+        asset.status = "error";
+        asset.detail = "Failed to parse file format.";
+      }
+    }
+
     const uploads = getMemoryStore().uploads.get(session.user.id) ?? [];
     getMemoryStore().uploads.set(session.user.id, [...uploads, asset]);
     return ok({ asset }, { status: 201 });

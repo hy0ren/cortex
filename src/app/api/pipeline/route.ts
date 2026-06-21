@@ -7,9 +7,9 @@ import { saveDraft } from "@/server/reports/report-service";
 export async function POST(request: Request) {
   try {
     const session = await requireRequestSession();
-    const body = await request.json() as { patientId?: string; draftId?: string };
-    if (!body.patientId || !body.draftId) {
-      return fail("INVALID_REQUEST", "patientId and draftId are required");
+    const body = await request.json() as { patientId?: string; encounterId?: string; draftId?: string };
+    if (!body.patientId || !body.encounterId || !body.draftId) {
+      return fail("INVALID_REQUEST", "patientId, encounterId, and draftId are required");
     }
     const draft = await getReportDraft(body.draftId);
     if (!draft) return fail("NOT_FOUND", "Draft not found", 404);
@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     return ok({ run: await createPipelineRun({
       clinicianId: session.user.id,
       patientId: body.patientId,
+      encounterId: body.encounterId,
       draftId: body.draftId,
     }) }, { status: 201 });
   } catch (error) {

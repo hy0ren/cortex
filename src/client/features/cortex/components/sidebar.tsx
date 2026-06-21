@@ -1,12 +1,13 @@
 "use client";
 
-import type { PatientRecord } from "@/data/contracts";
+import type { PatientRecord, Encounter } from "@/data/contracts";
 import type { CortexScreen, NavStyle } from "../model/types";
 import { patientAgeAndSex, patientInitials } from "../model/history-view";
 import { CortexLogo } from "./icons";
 
 type SidebarProps = {
   patient: PatientRecord | null;
+  encounter?: Encounter | null;
   onNavigate: (screen: CortexScreen) => void;
   navStyle: (key: CortexScreen) => NavStyle;
 };
@@ -74,7 +75,7 @@ function NavItem({
   );
 }
 
-export function Sidebar({ patient, onNavigate, navStyle }: SidebarProps) {
+export function Sidebar({ patient, encounter, onNavigate, navStyle }: SidebarProps) {
   const initials = patient ? patientInitials(patient.demographics.name) : "—";
   const name = patient?.demographics.name ?? "No patient loaded";
   const meta = patient ? patientAgeAndSex(patient) : "Select a session";
@@ -198,6 +199,19 @@ export function Sidebar({ patient, onNavigate, navStyle }: SidebarProps) {
             </div>
           </div>
         </div>
+        {encounter && (
+          <div style={{ marginTop: 12 }}>
+            <button
+              onClick={() => window.open(`/patient/${encounter.id}`, "_blank")}
+              className="w-full text-left flex items-center justify-between text-xs font-medium text-cortex-fg-subtle hover:text-cortex-fg px-2 py-1.5 rounded-cortex-sm hover:bg-cortex-border-soft transition-colors"
+            >
+              <span>Open Patient Intake Form</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={{ marginTop: "auto", padding: "var(--space-4) var(--space-4)", borderTop: "1px solid rgba(255,255,255,0.07)" }}>

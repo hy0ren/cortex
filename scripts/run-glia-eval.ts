@@ -19,10 +19,12 @@ async function runOnce(label: string) {
   process.env.GLIA_ENABLED = label === "glia-on" ? "true" : "false";
   resetEnvCache();
 
-  const workspace = await getWorkspace("eval-clinician", "pat-demo-hayes");
+  const workspace = await getWorkspace("eval-clinician", "pat-demo-hayes", undefined, "enc-demo-hayes");
+  if (!workspace) throw new Error("Workspace not found");
   const run = await createPipelineRun({
     clinicianId: workspace.draft.clinicianId,
     patientId: workspace.patient.id,
+    encounterId: "enc-demo-hayes",
     draftId: workspace.draft.id,
   });
 

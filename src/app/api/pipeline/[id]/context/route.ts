@@ -4,25 +4,22 @@ import { findPatient } from "@/server/persistence/patient-repository";
 import { getReportDraft } from "@/server/persistence/drafts";
 import { getPipelineRun } from "@/server/pipeline/pipeline-service";
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+import { NextRequest } from "next/server";
+import { requireRequestSession } from "@/server/auth/request-session";
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    if (!verifyBandSyncSecret(request)) {
-      return fail("UNAUTHORIZED", "Invalid band sync secret");
-    }
+     const session = await requireRequestSession();
+     const { id } = await params;
+     const run = await getPipelineRun(id);
+     if (!run) return fail("NOT_FOUND", "Pipeline run not found", 404);
 
-    const { id } = await context.params;
-    const run = getPipelineRun(id);
-    if (!run) return fail("NOT_FOUND", "Pipeline run not found");
+     const patient = await findPatient(run.patientId);
+     const draft = await getReportDraft(run.draftId);
+     if (!patient || !draft) return fail("NOT_FOUND", "Session context not found");
 
-    const patient = await findPatient(run.patientId);
-    const draft = await getReportDraft(run.draftId);
-    if (!patient || !draft) return fail("NOT_FOUND", "Session context not found");
-
-    return ok({ run, patient, draft });
+     return ok({ run, patient, draft });
   } catch (error) {
-    return routeError(error, { route: "pipeline.context" });
+     return routeError(error, { route: "pipeline.context" });
   }
 }

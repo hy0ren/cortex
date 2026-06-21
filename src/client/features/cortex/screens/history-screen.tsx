@@ -72,10 +72,10 @@ export function HistoryScreen({ patient, draft, onGoReport }: HistoryScreenProps
               Patient record
             </div>
             <h1 style={{ margin: 0, fontSize: "var(--text-3xl)", fontWeight: 700, letterSpacing: "-.02em", color: "var(--cortex-ink)" }}>
-              Eleanor M. Hayes
+              {patient.demographics.name}
             </h1>
             <p style={{ margin: "var(--space-2) 0 0", fontSize: "var(--text-md)", color: "var(--cortex-fg-subtle)" }}>
-              69F · MRN SYN‑4471 · 4 encounters on file · referred by Neurology
+              {patient.demographics.sex} · MRN {patient.mrn} · {encounters.length} encounters on file
             </p>
           </div>
           <button

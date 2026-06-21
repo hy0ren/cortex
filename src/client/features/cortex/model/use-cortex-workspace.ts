@@ -43,12 +43,20 @@ export function useCortexWorkspace(session: AuthSession) {
   const [pipeline, setPipeline] = useState<PipelineRun | null>(null);
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
   const refreshWorkspace = useCallback(async () => {
-    const result = await apiRequest<{ workspace: ReportWorkspace }>("/api/workspace");
+    setLoading(true);
+    const params = new URLSearchParams(window.location.search);
+    const encounterId = params.get("encounterId");
+    const query = encounterId ? `?encounterId=${encounterId}` : "";
+    const result = await apiRequest<{ workspace: ReportWorkspace | null }>(`/api/workspace${query}`);
     setWorkspace(result.workspace);
-    setPipeline(result.workspace.pipeline);
+    if (result.workspace) {
+      setPipeline(result.workspace.pipeline);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -292,12 +300,14 @@ export function useCortexWorkspace(session: AuthSession) {
 
   const flags = useMemo<GliaFlag[]>(() => workspace?.flags ?? [], [workspace?.flags]);
   const patient = workspace?.patient ?? null;
+  const encounter = workspace?.encounter ?? null;
   const draft = workspace?.draft ?? null;
   const isReady = Boolean(workspace);
 
   return useMemo(() => ({
     session,
     screen,
+    loading,
     navigate: setScreen,
     listening,
     voiceSupported: VOICE_SUPPORTED,
@@ -307,6 +317,7 @@ export function useCortexWorkspace(session: AuthSession) {
     closeExplanation: () => setExplainOpen(false),
     flags,
     patient,
+    encounter,
     draft,
     pipeline,
     uploads,
@@ -326,8 +337,8 @@ export function useCortexWorkspace(session: AuthSession) {
     exportReport,
     refreshWorkspace,
   }), [
-    busy, draft, explainOpen, exportReport, finalizeDraft, flags, isReady,
-    listening, message, navStyle, patient, pipeline, refreshWorkspace,
+    busy, draft, encounter, explainOpen, exportReport, finalizeDraft, flags, isReady,
+    listening, loading, message, navStyle, patient, pipeline, refreshWorkspace,
     resolveFlag, saveDraft, saveDraftSections, screen, session, startPipeline, togglePipeline,
     transcribeFile, uploadFile, uploads,
   ]);

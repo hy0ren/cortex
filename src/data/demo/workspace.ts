@@ -1,4 +1,4 @@
-import type { GliaFlag, PatientRecord, ReportDraft } from "@/data/contracts";
+import type { GliaFlag, PatientRecord, ReportDraft, Encounter } from "@/data/contracts";
 import { INITIAL_FLAGS } from "./cortex";
 
 export const DEMO_ACTIVE_PATIENT: PatientRecord = {
@@ -14,19 +14,22 @@ export const DEMO_ACTIVE_PATIENT: PatientRecord = {
       "Eight-month progressive memory decline; rule out amnestic MCI versus early neurodegenerative disease",
   },
   history: {
-    medical: ["Hypertension", "Hypothyroidism"],
+    medical: ["Type 2 Diabetes, well-controlled", "Hypertension"],
     psychiatric: [],
-    medications: ["Managed with family support"],
-    priorEvaluations: [
-      {
-        date: "2025-12-02",
-        setting: "Cognitive follow-up",
-        summary: "MoCA 24/30 with predominantly delayed-recall weakness.",
-      },
-    ],
+    medications: ["Metformin 500mg BID", "Lisinopril 10mg daily"],
+    priorEvaluations: [],
   },
-  visitTranscript:
-    "The patient and her daughter describe progressive forgetfulness, repeated questions, misplaced items, and increasing reliance on written reminders over approximately eight months. Daily activities remain mostly intact, although family now manages medications.",
+  priorReports: [],
+};
+
+export const DEMO_ACTIVE_ENCOUNTER: Encounter = {
+  id: "enc-demo-hayes",
+  patientId: "pat-demo-hayes",
+  clinicianId: "system",
+  status: "completed",
+  appointmentDate: "2026-06-21",
+  referralReason: "Eight-month progressive memory decline; rule out amnestic MCI versus early neurodegenerative disease",
+  transcript: "The patient and her daughter describe progressive forgetfulness, repeated questions, misplaced items, and increasing reliance on written reminders over approximately eight months. Daily activities remain mostly intact, although family now manages medications.",
   testBattery: [
     { test: "WAIS-IV", subtest: "Full Scale IQ", standardScore: 98, percentile: 45, classification: "Average" },
     { test: "WAIS-IV", subtest: "Verbal Comprehension", standardScore: 105, percentile: 63, classification: "Average" },
@@ -40,18 +43,9 @@ export const DEMO_ACTIVE_PATIENT: PatientRecord = {
     { test: "Verbal Fluency", subtest: "FAS", standardScore: 88, percentile: 21, classification: "Low Average" },
     { test: "Trail Making", subtest: "Part B", standardScore: 84, percentile: 14, classification: "Low Average" },
   ],
-  priorReports: [
-    {
-      date: "2025-12-02",
-      type: "Cognitive screening",
-      summary: "MoCA 24/30. Mild decline from baseline, predominantly delayed recall.",
-    },
-    {
-      date: "2025-06-15",
-      type: "Initial consultation",
-      summary: "Memory complaint raised by family. MoCA 27/30.",
-    },
-  ],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+
 };
 
 export const DEMO_REPORT_SECTIONS: Record<string, string> = {
@@ -69,15 +63,15 @@ export const DEMO_REPORT_SECTIONS: Record<string, string> = {
 
 export function createDemoDraft(
   clinicianId: string,
-  options?: { id?: string; patientId?: string }
+  options?: { id?: string; patientId?: string; fillMockData?: boolean }
 ): ReportDraft {
   const now = new Date().toISOString();
   return {
     id: options?.id ?? "draft-hayes-2026",
     clinicianId,
     patientId: options?.patientId ?? DEMO_ACTIVE_PATIENT.id,
-    status: "review",
-    sections: { ...DEMO_REPORT_SECTIONS },
+    status: options?.fillMockData ? "review" : "idle",
+    sections: options?.fillMockData ? { ...DEMO_REPORT_SECTIONS } : {},
     agentNotes: {
       flags: "[]",
     },

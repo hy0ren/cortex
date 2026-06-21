@@ -1,6 +1,6 @@
 "use client";
 
-import type { AuthUser } from "@/data/contracts";
+import type { AuthUser, PatientRecord, Encounter } from "@/data/contracts";
 import { Button } from "@/client/components/ui/button";
 
 type TopBarProps = {
@@ -10,9 +10,13 @@ type TopBarProps = {
   onExport: () => void;
   onSignOut: () => Promise<void>;
   user: AuthUser;
+  patient: PatientRecord;
+  encounter?: Encounter | null;
 };
 
-export function TopBar({ listening, voiceSupported, onToggleListen, onExport, onSignOut, user }: TopBarProps) {
+export function TopBar({ listening, voiceSupported, onToggleListen, onExport, onSignOut, user, patient, encounter }: TopBarProps) {
+  const initials = patient.demographics.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+  const dateStr = encounter ? new Date(encounter.updatedAt).toLocaleDateString() : "New Encounter";
   return (
     <>
       <header
@@ -41,20 +45,20 @@ export function TopBar({ listening, voiceSupported, onToggleListen, onExport, on
               fontSize: 10,
               fontWeight: 700,
               color: "var(--cortex-teal-dark)",
-              flex: "none",
-            }}
-          >
-            EH
-          </div>
-          <div style={{ fontSize: "var(--text-base)", fontWeight: 600, color: "var(--cortex-ink-2)" }}>Eleanor M. Hayes</div>
-          <span className="font-mono" style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)" }}>
-            ·
-          </span>
-          <span style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-subtle)" }}>Comprehensive Neuropsychological Evaluation</span>
-          <span className="font-mono" style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-disabled)", marginLeft: 2 }}>
-            18 Jun 2026
-          </span>
+            flex: "none",
+          }}
+        >
+          {initials}
         </div>
+        <div style={{ fontSize: "var(--text-base)", fontWeight: 600, color: "var(--cortex-ink-2)" }}>{patient.demographics.name}</div>
+        <span className="font-mono" style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)" }}>
+          ·
+        </span>
+        <span style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-subtle)" }}>Comprehensive Evaluation</span>
+        <span className="font-mono" style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-disabled)", marginLeft: 2 }}>
+          {dateStr}
+        </span>
+      </div>
         <div className="flex items-center gap-2.5" style={{ marginLeft: "auto" }}>
           <div
             role="button"

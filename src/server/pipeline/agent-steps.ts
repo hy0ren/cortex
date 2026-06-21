@@ -3,6 +3,7 @@ import type {
   GliaFlag,
   NormativeSearchResult,
   PatientRecord,
+  Encounter,
   VectorSearchResult,
 } from "@/data/contracts";
 import { completeWithClaude } from "@/server/ai/anthropic";
@@ -118,41 +119,45 @@ export function summarizeGlia(output: GliaOutput): string {
   return `${output.flags.length} QA flags · completeness ${output.completenessScore}% · consistency ${output.consistencyScore}%`;
 }
 
-export async function runWernickeStep(patient: PatientRecord): Promise<{
+export async function runWernickeStep(patient: PatientRecord, encounter: Encounter): Promise<{
   raw: string;
   output: WernickeOutput | null;
 }> {
   const raw = await completeWithClaude({
     system: WERNICKE_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: buildWernickeUserMessage({ patient }) }],
+    messages: [{ role: "user", content: buildWernickeUserMessage({ 
+      patient, transcript: encounter.transcript 
+    }) }],
   });
   return { raw, output: parseAgentJson<WernickeOutput>(raw) };
 }
 
 export async function retrieveNormativeEvidence(
   patient: PatientRecord,
+  encounter: Encounter,
   clinicalContext?: string
 ): Promise<NormativeSearchResult[]> {
   const query = [
     patient.demographics.referralReason,
     clinicalContext ?? "",
-    ...patient.testBattery.map(
+    ...encounter.testBattery.map(
       (score) => `${score.test} ${score.subtest ?? ""} ${score.classification}`
     ),
   ].join("\n");
-  const primaryTest = patient.testBattery[0]?.test;
+  const primaryTest = encounter.testBattery[0]?.test;
   return searchNormativeContext(query, { test: primaryTest }, 6);
 }
 
 export async function runNormStep(
   patient: PatientRecord,
+  encounter: Encounter,
   clinicalContext?: string
 ): Promise<{
   raw: string;
   output: NormOutput | null;
   normEvidence: NormativeSearchResult[];
 }> {
-  const normEvidence = await retrieveNormativeEvidence(patient, clinicalContext);
+  const normEvidence = await retrieveNormativeEvidence(patient, encounter, clinicalContext);
   const raw = await completeWithClaude({
     system: NORM_SYSTEM_PROMPT,
     messages: [
@@ -160,7 +165,7 @@ export async function runNormStep(
         role: "user",
         content: buildNormUserMessage({
           patient,
-          testBattery: patient.testBattery,
+          testBattery: encounter.testBattery,
           clinicalContext,
           retrievedNorms: normEvidence.map((item) => ({
             source: item.source,
@@ -175,10 +180,10 @@ export async function runNormStep(
   return { raw, output: parseAgentJson<NormOutput>(raw), normEvidence };
 }
 
-export async function runEngramStep(patient: PatientRecord): Promise<VectorSearchResult[]> {
+export async function runEngramStep(patient: PatientRecord, encounter: Encounter): Promise<VectorSearchResult[]> {
   if (getRuntimeCapabilities().redis !== "configured") return [];
   return searchPatientHistory(
-    `${patient.demographics.referralReason}\n${patient.visitTranscript}`,
+    `${patient.demographics.referralReason}\n${encounter.transcript}`,
     5,
     patient.id
   );

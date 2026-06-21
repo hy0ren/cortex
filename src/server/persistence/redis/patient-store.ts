@@ -38,18 +38,8 @@ export function embedPatientText(text: string, dims = 64): number[] {
 function buildPatientChunks(patient: PatientRecord): HistoryChunk[] {
   const chunks: HistoryChunk[] = [];
 
-  patient.visitTranscript
-    .split(/\n+/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .forEach((text, index) => {
-      chunks.push({
-        id: `${patient.id}-transcript-${index}`,
-        patientId: patient.id,
-        source: "transcript",
-        text,
-      });
-    });
+  // Patient visit transcripts are now stored in encounters.
+  // Patient chunks will only include history and prior reports.
 
   patient.priorReports.forEach((report, index) => {
     chunks.push({
@@ -101,7 +91,6 @@ export async function storePatient(patient: PatientRecord): Promise<void> {
   const summaryText = [
     patient.demographics.name,
     patient.demographics.referralReason,
-    patient.visitTranscript,
   ].join("\n");
   const summaryEmbedding = await embedText(summaryText);
 

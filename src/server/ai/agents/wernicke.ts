@@ -22,7 +22,7 @@ Rules:
 
 export type WernickeInput = {
   patient: PatientRecord;
-  transcriptOverride?: string;
+  transcript: string;
 };
 
 export type WernickeOutput = {
@@ -35,7 +35,7 @@ export type WernickeOutput = {
 };
 
 export function buildWernickeUserMessage(input: WernickeInput): string {
-  const transcript = input.transcriptOverride ?? input.patient.visitTranscript;
+  const transcript = input.transcript;
   return JSON.stringify(
     {
       schema: {

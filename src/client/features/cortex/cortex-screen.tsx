@@ -22,6 +22,7 @@ export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
       return (
         <IntakeScreen
           patient={workspace.patient}
+          encounter={workspace.encounter}
           uploads={workspace.uploads}
           busy={workspace.busy}
           onUpload={workspace.uploadFile}
@@ -36,6 +37,7 @@ export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
           flags={workspace.flags}
           draft={workspace.draft}
           patient={workspace.patient}
+          encounter={workspace.encounter}
           busy={workspace.busy}
           onResolveFlag={workspace.resolveFlag}
           onOpenExplain={workspace.openExplanation}

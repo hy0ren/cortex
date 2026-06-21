@@ -3,8 +3,9 @@ import { randomUUID } from "crypto";
 import type { AgentStatus, GliaFlag, PipelineRun } from "@/data/contracts";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { createReportRoom, kickoffBandPipeline } from "@/server/band/room-client";
-import { getMemoryStore } from "@/server/persistence/memory-store";
+import { storePipelineRun, getPipelineRunFromRedis, acquirePipelineLock, releasePipelineLock } from "@/server/persistence/redis/pipeline-store";
 import { findPatient } from "@/server/persistence/patient-repository";
+import { getEncounter } from "@/server/persistence/redis/encounter-store";
 import { getReportDraft } from "@/server/persistence/drafts";
 import { saveDraft } from "@/server/reports/report-service";
 import {
@@ -49,19 +50,20 @@ function log(
   };
 }
 
-function appendLog(run: PipelineRun, entry: AgentStatus): PipelineRun {
+async function appendLog(run: PipelineRun, entry: AgentStatus): Promise<PipelineRun> {
   const next = {
     ...run,
     agentLog: [...run.agentLog, entry],
     updatedAt: new Date().toISOString(),
   };
-  getMemoryStore().pipelines.set(run.id, next);
+  await storePipelineRun(next);
   return next;
 }
 
 export async function createPipelineRun(input: {
   clinicianId: string;
   patientId: string;
+  encounterId: string;
   draftId: string;
 }): Promise<PipelineRun> {
   const now = new Date().toISOString();
@@ -70,6 +72,7 @@ export async function createPipelineRun(input: {
     id: randomUUID(),
     clinicianId: input.clinicianId,
     patientId: input.patientId,
+    encounterId: input.encounterId,
     draftId: input.draftId,
     phase: "running",
     progress: 0,
@@ -84,7 +87,7 @@ export async function createPipelineRun(input: {
   if (draft) {
     await saveDraft({
       ...draft,
-      agentNotes: { ...draft.agentNotes, flags: "[]" },
+      agentNotes: { ...draft.agentNotes, flags: "[]", pipelineId: run.id },
       status: "generating",
     });
   }
@@ -105,7 +108,7 @@ export async function createPipelineRun(input: {
           patient,
           draftId: input.draftId,
         });
-        run = appendLog(
+        run = await appendLog(
           run,
           log("band", "done", "Band room created and Wernicke notified", {
             detail: room.id,
@@ -118,40 +121,48 @@ export async function createPipelineRun(input: {
     }
   }
 
-  getMemoryStore().pipelines.set(run.id, run);
+  await storePipelineRun(run);
   return run;
 }
 
-export function getPipelineRun(id: string): PipelineRun | null {
-  return getMemoryStore().pipelines.get(id) ?? null;
+export async function getPipelineRun(id: string): Promise<PipelineRun | null> {
+  return await getPipelineRunFromRedis(id);
 }
 
-export function setPipelinePhase(id: string, phase: "running" | "paused"): PipelineRun {
-  const run = getPipelineRun(id);
+export async function setPipelinePhase(id: string, phase: "running" | "paused"): Promise<PipelineRun> {
+  const run = await getPipelineRun(id);
   if (!run) throw new Error("Pipeline run not found");
   const next = { ...run, phase, updatedAt: new Date().toISOString() };
-  getMemoryStore().pipelines.set(id, next);
+  await storePipelineRun(next);
   return next;
 }
 
 export async function advancePipeline(id: string): Promise<PipelineRun> {
-  const run = getPipelineRun(id);
-  if (!run) throw new Error("Pipeline run not found");
-  if (run.phase === "paused" || run.phase === "complete") return run;
-  if (getRuntimeCapabilities().band === "configured" && run.bandRoomId) {
-    return run;
+  const acquired = await acquirePipelineLock(id, 60);
+  if (!acquired) {
+    const existing = await getPipelineRun(id);
+    if (existing) return existing;
+    throw new Error("Pipeline run not found");
   }
 
-  const step = Math.min(Math.floor(run.progress / 20), AGENT_SEQUENCE.length - 1);
-  const agent = AGENT_SEQUENCE[step];
-  const nextProgress = Math.min(run.progress + 20, 100);
-  const complete = nextProgress === 100;
-  const nextAgent = complete ? "complete" : AGENT_SEQUENCE[Math.min(step + 1, 4)];
+  try {
+    const run = await getPipelineRun(id);
+    if (!run) throw new Error("Pipeline run not found");
+    if (run.phase === "paused" || run.phase === "complete") return run;
+    if (getRuntimeCapabilities().band === "configured" && run.bandRoomId) {
+      return run;
+    }
 
-  let working = appendLog(
-    { ...run, progress: nextProgress, currentAgent: agent },
-    log(agent, "thinking", `${agent} started`)
-  );
+    const step = Math.min(Math.floor(run.progress / 20), AGENT_SEQUENCE.length - 1);
+    const agent = AGENT_SEQUENCE[step];
+    const nextProgress = Math.min(run.progress + 20, 100);
+    const complete = nextProgress === 100;
+    const nextAgent = complete ? "complete" : AGENT_SEQUENCE[Math.min(step + 1, 4)];
+
+    let working = await appendLog(
+      { ...run, progress: nextProgress, currentAgent: agent },
+      log(agent, "thinking", `${agent} started`)
+    );
 
   return withAgentSpan(
     `cortex.agent.${agent}`,
@@ -169,22 +180,23 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
 
       const anthropicReady = getRuntimeCapabilities().anthropic === "configured";
       const patient = await findPatient(working.patientId);
+      const encounter = await getEncounter(working.encounterId);
       const draft = await getReportDraft(working.draftId);
-      if (!patient || !draft) {
-        working = appendLog(working, log(agent, "error", `${agent} failed — missing patient or draft`));
+      if (!patient || !encounter || !draft) {
+        working = await appendLog(working, log(agent, "error", `${agent} failed — missing patient, encounter, or draft`));
         return { ...working, phase: "error" as const };
       }
 
       try {
         if (agent === "wernicke" && anthropicReady) {
-          const { output } = await runWernickeStep(patient);
+          const { output } = await runWernickeStep(patient, encounter);
           if (output) {
             await saveDraft({
               ...draft,
               agentNotes: { ...draft.agentNotes, wernicke: JSON.stringify(output) },
             });
             span.setAttribute("wernicke.red_flags", output.redFlags.length);
-            working = appendLog(
+            working = await appendLog(
               working,
               log(agent, "done", "Wernicke completed", {
                 detail: summarizeWernicke(output),
@@ -196,7 +208,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
 
         if (agent === "norm" && anthropicReady) {
           const wernickeNote = parseAgentJson<WernickeOutput>(draft.agentNotes.wernicke ?? "");
-          const { output, normEvidence } = await runNormStep(patient, wernickeNote?.clinicalContext);
+          const { output, normEvidence } = await runNormStep(patient, encounter, wernickeNote?.clinicalContext);
           if (output) {
             await saveDraft({
               ...draft,
@@ -227,7 +239,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
                 : 0;
             span.setAttribute("norm.label_match_avg", labelMatchAvg);
             span.setAttribute("norm.impaired_domains", impairedCount);
-            working = appendLog(
+            working = await appendLog(
               working,
               log(agent, "done", "Norm completed", {
                 detail: summarizeNorm(output),
@@ -238,13 +250,13 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
         }
 
         if (agent === "engram") {
-          const evidence = await runEngramStep(patient);
+          const evidence = await runEngramStep(patient, encounter);
           await saveDraft({
             ...draft,
             agentNotes: { ...draft.agentNotes, engramEvidence: JSON.stringify(evidence) },
           });
           span.setAttribute("engram.result_count", evidence.length);
-          working = appendLog(
+          working = await appendLog(
             working,
             log(agent, "done", "Engram completed", {
               detail: summarizeEngram(evidence),
@@ -258,10 +270,10 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
           const wernickeNote = parseAgentJson<WernickeOutput>(latestDraft.agentNotes.wernicke ?? "");
           const normNote = parseAgentJson<NormOutput>(latestDraft.agentNotes.norm ?? "");
           const engramEvidence = JSON.parse(latestDraft.agentNotes.engramEvidence ?? "[]");
-          const clinicalContext = wernickeNote?.clinicalContext ?? patient.visitTranscript;
+          const clinicalContext = wernickeNote?.clinicalContext ?? encounter.transcript;
           const normativeInterpretation =
             normNote?.overallProfile ??
-            patient.testBattery
+            encounter.testBattery
               .map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`)
               .join("\n");
 
@@ -282,7 +294,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
             : { ...latestDraft.sections, generatedDraft: raw };
           await saveDraft({ ...latestDraft, sections, status: "generating" });
           if (output) {
-            working = appendLog(
+            working = await appendLog(
               working,
               log(agent, "done", "Broca completed", {
                 detail: summarizeBroca(output),
@@ -302,9 +314,9 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
             const normNote = parseAgentJson<NormOutput>(latestDraft.agentNotes.norm ?? "");
             const gliaInput = {
               draftSections: latestDraft.sections,
-              clinicalContext: wernickeNote?.clinicalContext ?? patient.visitTranscript,
+              clinicalContext: wernickeNote?.clinicalContext ?? encounter.transcript,
               normativeInterpretation: normNote?.overallProfile ?? "",
-              sourceTranscript: patient.visitTranscript,
+              sourceTranscript: encounter.transcript,
             };
             const { raw, output } = await runGliaStep(gliaInput);
             recordGeneration(buildGliaUserMessage(gliaInput), raw);
@@ -313,7 +325,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
               span.setAttribute("glia.completeness_score", output.completenessScore);
               span.setAttribute("glia.consistency_score", output.consistencyScore);
               span.setAttribute("glia.unresolved_flags", flags.length);
-              working = appendLog(
+              working = await appendLog(
                 working,
                 log(agent, "done", "Glia completed", {
                   detail: summarizeGlia(output),
@@ -325,7 +337,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
               );
             }
           } else {
-            working = appendLog(
+            working = await appendLog(
               working,
               log(agent, "done", "Glia skipped", { detail: "QA disabled for eval baseline" })
             );
@@ -343,7 +355,7 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
       } catch (error) {
         console.warn(`[cortex-pipeline] ${agent} failed`, error);
         captureAgentError(error, { agent, sessionId: working.id, patientId: working.patientId });
-        working = appendLog(working, log(agent, "error", `${agent} failed`));
+        working = await appendLog(working, log(agent, "error", `${agent} failed`));
       }
 
       const finished: PipelineRun = {
@@ -353,10 +365,13 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
         phase: complete ? "complete" : "running",
         updatedAt: new Date().toISOString(),
       };
-      getMemoryStore().pipelines.set(id, finished);
+      await storePipelineRun(finished);
       return finished;
     }
   );
+  } finally {
+    await releasePipelineLock(id);
+  }
 }
 
 export { AGENT_SEQUENCE };

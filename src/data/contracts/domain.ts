@@ -39,9 +39,31 @@ export type PatientRecord = {
   mrn: string;
   demographics: PatientDemographics;
   history: PatientHistory;
-  visitTranscript: string;
-  testBattery: TestScore[];
   priorReports: PriorReport[];
+};
+
+export type PatientIntake = {
+  concerns: string;
+  symptoms: string[];
+  currentMedications: string[];
+  notes: string;
+};
+
+/** Durable encounter session state */
+export type Encounter = {
+  id: string;
+  patientId: string;
+  clinicianId: string;
+  status: "scheduled" | "in-progress" | "completed";
+  appointmentDate: string;
+  referralReason: string;
+  transcript: string;
+  testBattery: TestScore[];
+  intake?: PatientIntake;
+  pipelineRunId?: string;
+  draftId?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 /** Firestore draft document — live session state only, never patient history. */

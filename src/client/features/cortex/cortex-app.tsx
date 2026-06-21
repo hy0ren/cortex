@@ -6,6 +6,7 @@ import { TopBar } from "./components/top-bar";
 import { ExplainModal } from "./components/explain-modal";
 import { CortexScreen } from "./cortex-screen";
 import { useCortexWorkspace } from "./model/use-cortex-workspace";
+import { PatientSelectionScreen } from "./screens/patient-selection-screen";
 
 type CortexAppProps = {
   session: AuthSession;
@@ -15,10 +16,19 @@ type CortexAppProps = {
 export function CortexApp({ session, onSignOut }: CortexAppProps) {
   const workspace = useCortexWorkspace(session);
 
+  if (workspace.loading) {
+    return <div className="flex h-screen items-center justify-center bg-cortex-bg text-cortex-fg-muted">Loading Cortex...</div>;
+  }
+
+  if (!workspace.isReady || !workspace.patient) {
+    return <PatientSelectionScreen />;
+  }
+
   return (
     <div style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden", background: "#F5F6F8" }}>
       <Sidebar
         patient={workspace.patient}
+        encounter={workspace.encounter}
         onNavigate={workspace.navigate}
         navStyle={workspace.navStyle}
       />
@@ -31,6 +41,8 @@ export function CortexApp({ session, onSignOut }: CortexAppProps) {
           onExport={workspace.exportReport}
           onSignOut={onSignOut}
           user={session.user}
+          patient={workspace.patient}
+          encounter={workspace.encounter}
         />
         <CortexScreen
           workspace={workspace}

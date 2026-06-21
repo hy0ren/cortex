@@ -146,4 +146,7 @@ export const RedisKeys = {
   historyChunk: (id: string) => `cortex:chunk:${id}`,
   normativeIndex: () => "cortex:normative:index",
   normativeChunk: (id: string) => `cortex:normative:${id}`,
+  encounter: (id: string) => `cortex:encounter:${id}`,
+  patientEncounters: (patientId: string) => `cortex:patient:${patientId}:encounters`,
+  pipelineRun: (id: string) => `cortex:pipeline:${id}`,
 } as const;

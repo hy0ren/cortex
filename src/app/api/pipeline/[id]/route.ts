@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { requireRequestSession } from "@/server/auth/request-session";
 import { fail, ok, routeError } from "@/server/http/api-response";
 import {
@@ -7,13 +8,13 @@ import {
 } from "@/server/pipeline/pipeline-service";
 
 export async function GET(
-  _request: Request,
-  context: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireRequestSession();
-    const { id } = await context.params;
-    const run = getPipelineRun(id);
+    const { id } = await params;
+    const run = await getPipelineRun(id);
     if (!run) return fail("NOT_FOUND", "Pipeline run not found", 404);
     if (run.clinicianId !== session.user.id) {
       return fail("FORBIDDEN", "Pipeline run does not belong to this session", 403);
@@ -25,13 +26,13 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireRequestSession();
-    const { id } = await context.params;
-    const run = getPipelineRun(id);
+    const { id } = await params;
+    const run = await getPipelineRun(id);
     if (!run) return fail("NOT_FOUND", "Pipeline run not found", 404);
     if (run.clinicianId !== session.user.id) {
       return fail("FORBIDDEN", "Pipeline run does not belong to this session", 403);
@@ -40,8 +41,8 @@ export async function PATCH(
       action?: "advance" | "pause" | "resume";
     };
     if (body.action === "advance") return ok({ run: await advancePipeline(id) });
-    if (body.action === "pause") return ok({ run: setPipelinePhase(id, "paused") });
-    if (body.action === "resume") return ok({ run: setPipelinePhase(id, "running") });
+    if (body.action === "pause") return ok({ run: await setPipelinePhase(id, "paused") });
+    if (body.action === "resume") return ok({ run: await setPipelinePhase(id, "running") });
     return fail("INVALID_REQUEST", "Unsupported pipeline action");
   } catch (error) {
     return routeError(error, { route: "pipeline.patch" });

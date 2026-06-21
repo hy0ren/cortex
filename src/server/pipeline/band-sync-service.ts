@@ -4,6 +4,8 @@ import { postBandHandoff } from "@/server/band/room-client";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { getReportDraft } from "@/server/persistence/drafts";
 import { findPatient } from "@/server/persistence/patient-repository";
+import { getEncounter } from "@/server/persistence/redis/encounter-store";
+import { storePipelineRun } from "@/server/persistence/redis/pipeline-store";
 import { saveDraft } from "@/server/reports/report-service";
 import {
   applyBrocaOutput,
@@ -26,7 +28,6 @@ import { buildGliaUserMessage } from "@/server/ai/agents/glia";
 import {
   getPipelineRun,
 } from "@/server/pipeline/pipeline-service";
-import { getMemoryStore } from "@/server/persistence/memory-store";
 import {
   recordGeneration,
   withAgentSpan,
@@ -59,8 +60,8 @@ function log(
   return { agent, phase, message, timestamp: new Date().toISOString(), ...extra };
 }
 
-function persistRun(run: PipelineRun): PipelineRun {
-  getMemoryStore().pipelines.set(run.id, run);
+async function persistRun(run: PipelineRun): Promise<PipelineRun> {
+  await storePipelineRun(run);
   return run;
 }
 
@@ -68,13 +69,13 @@ export async function executePipelineAgent(
   runId: string,
   agent: AgentId
 ): Promise<PipelineRun> {
-  const run = getPipelineRun(runId);
+  const run = await getPipelineRun(runId);
   if (!run) throw new Error("Pipeline run not found");
   if (!["wernicke", "norm", "engram", "broca", "glia"].includes(agent)) {
     throw new Error(`Invalid agent: ${agent}`);
   }
 
-  let working = persistRun({
+  let working = await persistRun({
     ...run,
     currentAgent: agent,
     agentLog: [...run.agentLog, log(agent, "thinking", `${agent} started`)],
@@ -92,18 +93,19 @@ export async function executePipelineAgent(
 
       const anthropicReady = getRuntimeCapabilities().anthropic === "configured";
       const patient = await findPatient(run.patientId);
+      const encounter = await getEncounter(run.encounterId);
       const draft = await getReportDraft(run.draftId);
-      if (!patient || !draft) throw new Error("Missing patient or draft");
+      if (!patient || !encounter || !draft) throw new Error("Missing patient, encounter, or draft");
 
       try {
         if (agent === "wernicke" && anthropicReady) {
-          const { output } = await runWernickeStep(patient);
+          const { output } = await runWernickeStep(patient, encounter);
           if (output) {
             await saveDraft({
               ...draft,
               agentNotes: { ...draft.agentNotes, wernicke: JSON.stringify(output) },
             });
-            working = persistRun({
+            working = await persistRun({
               ...working,
               agentLog: [
                 ...working.agentLog,
@@ -118,7 +120,7 @@ export async function executePipelineAgent(
 
         if (agent === "norm" && anthropicReady) {
           const wernickeNote = parseAgentJson<WernickeOutput>(draft.agentNotes.wernicke ?? "");
-          const { output, normEvidence } = await runNormStep(patient, wernickeNote?.clinicalContext);
+          const { output, normEvidence } = await runNormStep(patient, encounter, wernickeNote?.clinicalContext);
           if (output) {
             await saveDraft({
               ...draft,
@@ -128,7 +130,7 @@ export async function executePipelineAgent(
                 normEvidence: JSON.stringify(normEvidence),
               },
             });
-            working = persistRun({
+            working = await persistRun({
               ...working,
               agentLog: [
                 ...working.agentLog,
@@ -142,12 +144,12 @@ export async function executePipelineAgent(
         }
 
         if (agent === "engram") {
-          const evidence = await runEngramStep(patient);
+          const evidence = await runEngramStep(patient, encounter);
           await saveDraft({
             ...draft,
             agentNotes: { ...draft.agentNotes, engramEvidence: JSON.stringify(evidence) },
           });
-          working = persistRun({
+          working = await persistRun({
             ...working,
             agentLog: [
               ...working.agentLog,
@@ -166,10 +168,10 @@ export async function executePipelineAgent(
           const engramEvidence = JSON.parse(latestDraft.agentNotes.engramEvidence ?? "[]");
           const gliaInput = {
             patient,
-            clinicalContext: wernickeNote?.clinicalContext ?? patient.visitTranscript,
+            clinicalContext: wernickeNote?.clinicalContext ?? encounter.transcript,
             normativeInterpretation:
               normNote?.overallProfile ??
-              patient.testBattery
+              encounter.testBattery
                 .map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`)
                 .join("\n"),
             engramEvidence,
@@ -181,7 +183,7 @@ export async function executePipelineAgent(
             : latestDraft.sections;
           await saveDraft({ ...latestDraft, sections, status: "generating" });
           if (output) {
-            working = persistRun({
+            working = await persistRun({
               ...working,
               agentLog: [
                 ...working.agentLog,
@@ -204,9 +206,9 @@ export async function executePipelineAgent(
             const normNote = parseAgentJson<NormOutput>(latestDraft.agentNotes.norm ?? "");
             const reviewInput = {
               draftSections: latestDraft.sections,
-              clinicalContext: wernickeNote?.clinicalContext ?? patient.visitTranscript,
+              clinicalContext: wernickeNote?.clinicalContext ?? encounter.transcript,
               normativeInterpretation: normNote?.overallProfile ?? "",
-              sourceTranscript: patient.visitTranscript,
+              sourceTranscript: encounter.transcript,
             };
             const { raw, output } = await runGliaStep(reviewInput);
             recordGeneration(buildGliaUserMessage(reviewInput), raw);
@@ -214,7 +216,7 @@ export async function executePipelineAgent(
               flags = gliaFlagsFromOutput(output);
               span.setAttribute("glia.completeness_score", output.completenessScore);
               span.setAttribute("glia.consistency_score", output.consistencyScore);
-              working = persistRun({
+              working = await persistRun({
                 ...working,
                 agentLog: [
                   ...working.agentLog,
@@ -226,7 +228,7 @@ export async function executePipelineAgent(
               });
             }
           } else {
-            working = persistRun({
+            working = await persistRun({
               ...working,
               agentLog: [
                 ...working.agentLog,
@@ -243,7 +245,7 @@ export async function executePipelineAgent(
         }
       } catch (error) {
         captureAgentError(error, { agent, sessionId: run.id, patientId: run.patientId });
-        working = persistRun({
+        working = await persistRun({
           ...working,
           phase: "error",
           agentLog: [...working.agentLog, log(agent, "error", `${agent} failed`)],
@@ -254,7 +256,7 @@ export async function executePipelineAgent(
       const next = NEXT_AGENT[agent] ?? "complete";
       const progress = AGENT_PROGRESS[agent] ?? working.progress;
       const lastLog = working.agentLog.at(-1);
-      const finished = persistRun({
+      const finished = await persistRun({
         ...working,
         progress,
         currentAgent: next,

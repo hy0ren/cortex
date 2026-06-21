@@ -3,7 +3,7 @@ import type { PatientRecord } from "@/data/contracts";
 import { PATIENT_FIXTURES } from "@/data/fixtures";
 import { DEMO_ACTIVE_PATIENT } from "@/data/demo/workspace";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
-import { getPatient, listPatientIds } from "./redis";
+import { getPatient, listPatientIds, storePatient } from "./redis";
 import { captureDegradedFallback } from "@/server/observability/sentry";
 
 const fallbackPatients = [DEMO_ACTIVE_PATIENT, ...PATIENT_FIXTURES];
@@ -34,4 +34,16 @@ export async function findPatient(id: string): Promise<PatientRecord | null> {
     }
   }
   return fallbackPatients.find((patient) => patient.id === id) ?? null;
+}
+
+export async function createPatient(patient: PatientRecord): Promise<void> {
+  if (getRuntimeCapabilities().redis === "configured") {
+    await storePatient(patient);
+  }
+}
+
+export async function updatePatient(patient: PatientRecord): Promise<void> {
+  if (getRuntimeCapabilities().redis === "configured") {
+    await storePatient(patient);
+  }
 }

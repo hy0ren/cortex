@@ -112,7 +112,11 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
     "cortex.eval.wernicke",
     { agent: "wernicke", ...common },
     async (span) => {
-      span.setAttributes({ "eval.kind": "bulk-synthetic", "eval.round": round });
+      span.setAttributes({
+        "eval.kind": "bulk-synthetic",
+        "eval.label": label,
+        "eval.round": round,
+      });
       const result = await runWernickeStep(patient, encounter);
       recordGeneration(
         buildWernickeUserMessage({ patient, transcript: encounter.transcript }),
@@ -129,7 +133,11 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
     "cortex.eval.norm",
     { agent: "norm", ...common },
     async (span) => {
-      span.setAttributes({ "eval.kind": "bulk-synthetic", "eval.round": round });
+      span.setAttributes({
+        "eval.kind": "bulk-synthetic",
+        "eval.label": label,
+        "eval.round": round,
+      });
       const result = await runNormStep(patient, encounter, clinicalContext);
       recordGeneration(
         buildNormUserMessage({
@@ -155,7 +163,11 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
     "cortex.eval.engram",
     { agent: "engram", ...common },
     async (span) => {
-      span.setAttributes({ "eval.kind": "bulk-synthetic", "eval.round": round });
+      span.setAttributes({
+        "eval.kind": "bulk-synthetic",
+        "eval.label": label,
+        "eval.round": round,
+      });
       const result = await runEngramStep(patient, encounter);
       span.setAttribute("eval.result_count", result.length);
       return result;
@@ -177,7 +189,11 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
     "cortex.eval.broca",
     { agent: "broca", ...common },
     async (span) => {
-      span.setAttributes({ "eval.kind": "bulk-synthetic", "eval.round": round });
+      span.setAttributes({
+        "eval.kind": "bulk-synthetic",
+        "eval.label": label,
+        "eval.round": round,
+      });
       const result = await runBrocaStep(brocaInput);
       recordGeneration(
         buildBrocaUserMessage({
@@ -218,7 +234,11 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
     "cortex.eval.glia",
     { agent: "glia", ...common },
     async (span) => {
-      span.setAttributes({ "eval.kind": "bulk-synthetic", "eval.round": round });
+      span.setAttributes({
+        "eval.kind": "bulk-synthetic",
+        "eval.label": label,
+        "eval.round": round,
+      });
       const result = await runGliaStep(gliaInput);
       recordGeneration(buildGliaUserMessage(gliaInput), result.raw);
       span.setAttribute("eval.parse_success", Boolean(result.output));

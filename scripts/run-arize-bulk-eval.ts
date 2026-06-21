@@ -6,6 +6,7 @@
  */
 import { loadEnvConfig } from "@next/env";
 import { randomUUID } from "crypto";
+import { writeFile } from "fs/promises";
 import {
   DEMO_ACTIVE_ENCOUNTER,
   DEMO_ACTIVE_PATIENT,
@@ -43,6 +44,32 @@ const patientLimit = Math.max(
   Number(limitArg?.split("=")[1] ?? PATIENT_FIXTURES.length + 1)
 );
 const patients = [DEMO_ACTIVE_PATIENT, ...PATIENT_FIXTURES].slice(0, patientLimit);
+const label =
+  process.argv.find((arg) => arg.startsWith("--label="))?.split("=")[1] ??
+  "unlabeled";
+const summaryFile = process.argv
+  .find((arg) => arg.startsWith("--summary-file="))
+  ?.split("=")[1];
+
+type CaseResult = {
+  label: string;
+  round: number;
+  patientId: string;
+  parseCount: number;
+  redFlagCount: number;
+  normEvidenceCount: number;
+  engramResultCount: number;
+  sectionCount: number;
+  gliaFlagCount: number;
+  completenessScore: number;
+  consistencyScore: number;
+  wernickeOutput: unknown;
+  normOutput: unknown;
+  brocaOutput: unknown;
+  gliaOutput: unknown;
+};
+
+const results: CaseResult[] = [];
 
 function encounterFor(patient: PatientRecord, index: number): Encounter {
   if (patient.id === DEMO_ACTIVE_PATIENT.id) return DEMO_ACTIVE_ENCOUNTER;
@@ -199,6 +226,29 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
     }
   );
 
+  results.push({
+    label,
+    round,
+    patientId: patient.id,
+    parseCount: [
+      wernicke.output,
+      norm.output,
+      broca.output,
+      glia.output,
+    ].filter(Boolean).length,
+    redFlagCount: wernicke.output?.redFlags.length ?? 0,
+    normEvidenceCount: norm.normEvidence.length,
+    engramResultCount: engramEvidence.length,
+    sectionCount: broca.output ? Object.keys(broca.output.sections).length : 0,
+    gliaFlagCount: glia.output?.flags.length ?? 0,
+    completenessScore: glia.output?.completenessScore ?? 0,
+    consistencyScore: glia.output?.consistencyScore ?? 0,
+    wernickeOutput: wernicke.output,
+    normOutput: norm.output,
+    brocaOutput: broca.output,
+    gliaOutput: glia.output,
+  });
+
   console.log(
     `  ${patient.id}: parsed=${[
       wernicke.output,
@@ -221,6 +271,10 @@ async function main() {
   }
   await flushArizeTracing();
   await disconnectRedis();
+  if (summaryFile) {
+    await writeFile(summaryFile, JSON.stringify(results, null, 2));
+    console.log(`Summary written to ${summaryFile}`);
+  }
   console.log(`Export complete: ${rounds * patients.length * 5} agent spans.`);
 }
 

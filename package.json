@@ -14,6 +14,9 @@
     "eval:glia": "node --conditions=react-server --import tsx scripts/run-glia-eval.ts",
     "eval:arize": "node --conditions=react-server --import tsx scripts/run-arize-bulk-eval.ts",
     "band:workers": "cd services/band-workers && npm install && npm start",
+    "terac:create-opportunity": "node --conditions=react-server --import tsx scripts/create-terac-opportunity.ts",
+    "terac:sync-submissions": "node --conditions=react-server --import tsx scripts/sync-terac-submissions.ts",
+    "terac:eval": "node --conditions=react-server --import tsx scripts/run-annotation-eval.ts",
     "check:keys": "node --conditions=react-server --import tsx scripts/check-api-keys.ts",
     "check:production-env": "node --import tsx scripts/validate-production-env.ts",
     "typecheck": "tsc --noEmit"

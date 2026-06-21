@@ -1,9 +1,12 @@
 import "server-only";
-import type { PatientRecord, VectorSearchResult } from "@/data/contracts";
+import type { HistoryChunk, PatientRecord, VectorSearchResult } from "@/data/contracts";
+import { embedText, embedTexts } from "@/server/ai/embeddings";
 import { connectRedis, RedisKeys } from "./client";
 
+type StoredHistoryChunk = HistoryChunk & { embedding: number[] };
+
 /** Cosine similarity between two equal-length vectors. */
-function cosineSimilarity(a: number[], b: number[]): number {
+export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length || a.length === 0) return 0;
   let dot = 0;
   let normA = 0;
@@ -17,7 +20,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return denom === 0 ? 0 : dot / denom;
 }
 
-/** Simple hash-based embedding for fixture/demo vector search (no external model). */
+/** @deprecated Use embedText from embeddings service. */
 export function embedPatientText(text: string, dims = 64): number[] {
   const vec = new Array<number>(dims).fill(0);
   const tokens = text.toLowerCase().split(/\W+/).filter(Boolean);
@@ -32,31 +35,84 @@ export function embedPatientText(text: string, dims = 64): number[] {
   return norm === 0 ? vec : vec.map((v) => v / norm);
 }
 
-function patientToSearchText(patient: PatientRecord): string {
-  return [
-    patient.demographics.name,
-    patient.demographics.referralReason,
-    patient.history.medical.join(" "),
-    patient.history.psychiatric.join(" "),
-    patient.visitTranscript,
-    patient.priorReports.map((r) => r.summary).join(" "),
-  ].join("\n");
+function buildPatientChunks(patient: PatientRecord): HistoryChunk[] {
+  const chunks: HistoryChunk[] = [];
+
+  patient.visitTranscript
+    .split(/\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .forEach((text, index) => {
+      chunks.push({
+        id: `${patient.id}-transcript-${index}`,
+        patientId: patient.id,
+        source: "transcript",
+        text,
+      });
+    });
+
+  patient.priorReports.forEach((report, index) => {
+    chunks.push({
+      id: `${patient.id}-report-${index}`,
+      patientId: patient.id,
+      source: "priorReport",
+      date: report.date,
+      text: `${report.type}: ${report.summary}`,
+    });
+  });
+
+  patient.history.priorEvaluations.forEach((evaluation, index) => {
+    chunks.push({
+      id: `${patient.id}-eval-${index}`,
+      patientId: patient.id,
+      source: "priorEvaluation",
+      date: evaluation.date,
+      text: `${evaluation.setting}: ${evaluation.summary}`,
+    });
+  });
+
+  return chunks;
+}
+
+async function indexPatientChunks(patient: PatientRecord): Promise<void> {
+  const redis = await connectRedis();
+  const chunks = buildPatientChunks(patient);
+  const existing = await redis.smembers(RedisKeys.patientChunks(patient.id));
+  if (existing.length > 0) {
+    await redis.del(...existing.map((id) => RedisKeys.historyChunk(id)));
+  }
+  await redis.del(RedisKeys.patientChunks(patient.id));
+
+  if (chunks.length === 0) return;
+
+  const embeddings = await embedTexts(chunks.map((chunk) => chunk.text));
+  const multi = redis.multi();
+  for (let i = 0; i < chunks.length; i++) {
+    const stored: StoredHistoryChunk = { ...chunks[i], embedding: embeddings[i] ?? [] };
+    multi.set(RedisKeys.historyChunk(chunks[i].id), JSON.stringify(stored));
+    multi.sadd(RedisKeys.patientChunks(patient.id), chunks[i].id);
+  }
+  await multi.exec();
 }
 
 /** Persist a synthetic patient record to Redis (history lane — never Firestore). */
 export async function storePatient(patient: PatientRecord): Promise<void> {
   const redis = await connectRedis();
-  const key = RedisKeys.patient(patient.id);
+  const summaryText = [
+    patient.demographics.name,
+    patient.demographics.referralReason,
+    patient.visitTranscript,
+  ].join("\n");
+  const summaryEmbedding = await embedText(summaryText);
 
   await redis
     .multi()
-    .set(key, JSON.stringify(patient))
+    .set(RedisKeys.patient(patient.id), JSON.stringify(patient))
     .sadd(RedisKeys.patientIndex(), patient.id)
-    .set(
-      RedisKeys.patientEmbedding(patient.id),
-      JSON.stringify(embedPatientText(patientToSearchText(patient)))
-    )
+    .set(RedisKeys.patientEmbedding(patient.id), JSON.stringify(summaryEmbedding))
     .exec();
+
+  await indexPatientChunks(patient);
 }
 
 /** Retrieve a patient record by ID. */
@@ -73,39 +129,53 @@ export async function listPatientIds(): Promise<string[]> {
   return redis.smembers(RedisKeys.patientIndex());
 }
 
-/** Vector similarity search over patient history snippets. */
+/** Vector similarity search over patient history chunks (same-patient when patientId provided). */
 export async function searchPatientHistory(
   query: string,
-  limit = 5
+  limit = 5,
+  patientId?: string
 ): Promise<VectorSearchResult[]> {
   const redis = await connectRedis();
-  const queryVec = embedPatientText(query);
-  const ids = await listPatientIds();
-
+  const queryVec = await embedText(query);
+  const patientIds = patientId ? [patientId] : await listPatientIds();
   const results: VectorSearchResult[] = [];
 
-  for (const patientId of ids) {
-    const [patientRaw, embeddingRaw] = await redis.mget(
-      RedisKeys.patient(patientId),
-      RedisKeys.patientEmbedding(patientId)
-    );
-    if (!patientRaw || !embeddingRaw) continue;
+  for (const id of patientIds) {
+    const chunkIds = await redis.smembers(RedisKeys.patientChunks(id));
+    if (chunkIds.length === 0) {
+      const patientRaw = await redis.get(RedisKeys.patient(id));
+      if (!patientRaw) continue;
+      const patient = JSON.parse(patientRaw) as PatientRecord;
+      const embeddingRaw = await redis.get(RedisKeys.patientEmbedding(id));
+      if (!embeddingRaw) continue;
+      const embedding = JSON.parse(embeddingRaw) as number[];
+      results.push({
+        chunkId: `${id}-summary`,
+        patientId: id,
+        score: cosineSimilarity(queryVec, embedding),
+        snippet: [
+          patient.demographics.referralReason,
+          patient.priorReports[0]?.summary ?? "",
+        ]
+          .filter(Boolean)
+          .join(" — "),
+        source: "priorReport",
+      });
+      continue;
+    }
 
-    const patient = JSON.parse(patientRaw) as PatientRecord;
-    const embedding = JSON.parse(embeddingRaw) as number[];
-    const score = cosineSimilarity(queryVec, embedding);
-
-    results.push({
-      patientId,
-      score,
-      snippet: [
-        patient.demographics.name,
-        patient.demographics.referralReason,
-        patient.priorReports[0]?.summary ?? "",
-      ]
-        .filter(Boolean)
-        .join(" — "),
-    });
+    const rawChunks = await redis.mget(...chunkIds.map((chunkId) => RedisKeys.historyChunk(chunkId)));
+    for (const raw of rawChunks) {
+      if (!raw) continue;
+      const chunk = JSON.parse(raw) as StoredHistoryChunk;
+      results.push({
+        chunkId: chunk.id,
+        patientId: chunk.patientId,
+        score: cosineSimilarity(queryVec, chunk.embedding),
+        snippet: chunk.text.slice(0, 240),
+        source: chunk.source,
+      });
+    }
   }
 
   return results.sort((a, b) => b.score - a.score).slice(0, limit);
@@ -126,7 +196,12 @@ export async function clearPatientStore(): Promise<void> {
   const keys = ids.flatMap((id) => [
     RedisKeys.patient(id),
     RedisKeys.patientEmbedding(id),
+    RedisKeys.patientChunks(id),
   ]);
+  for (const id of ids) {
+    const chunkIds = await redis.smembers(RedisKeys.patientChunks(id));
+    keys.push(...chunkIds.map((chunkId) => RedisKeys.historyChunk(chunkId)));
+  }
   if (keys.length > 0) await redis.del(...keys);
   await redis.del(RedisKeys.patientIndex());
 }

@@ -7,6 +7,7 @@
  */
 import { loadEnvConfig } from "@next/env";
 import { PATIENT_FIXTURES } from "@/data/fixtures";
+import { DEMO_ACTIVE_PATIENT } from "@/data/demo/workspace";
 import {
   clearPatientStore,
   disconnectRedis,
@@ -15,20 +16,22 @@ import {
 
 loadEnvConfig(process.cwd());
 
+const ALL_PATIENTS = [DEMO_ACTIVE_PATIENT, ...PATIENT_FIXTURES];
+
 async function main() {
   const shouldClear = process.argv.includes("--clear");
 
-  console.log(`Seeding ${PATIENT_FIXTURES.length} synthetic patients to Redis...`);
+  console.log(`Seeding ${ALL_PATIENTS.length} synthetic patients to Redis...`);
 
   if (shouldClear) {
     console.log("Clearing existing patient store...");
     await clearPatientStore();
   }
 
-  const count = await seedPatients(PATIENT_FIXTURES);
+  const count = await seedPatients(ALL_PATIENTS);
   console.log(`Done. Stored ${count} patients.`);
 
-  for (const p of PATIENT_FIXTURES) {
+  for (const p of ALL_PATIENTS) {
     console.log(`  • ${p.id} — ${p.demographics.name} (${p.mrn})`);
   }
 

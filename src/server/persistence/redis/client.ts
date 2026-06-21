@@ -142,5 +142,8 @@ export const RedisKeys = {
   patient: (id: string) => `cortex:patient:${id}`,
   patientIndex: () => "cortex:patients:index",
   patientEmbedding: (id: string) => `cortex:patient:${id}:embedding`,
-  patientSearchIndex: () => "cortex:patients:search",
+  patientChunks: (id: string) => `cortex:patient:${id}:chunks`,
+  historyChunk: (id: string) => `cortex:chunk:${id}`,
+  normativeIndex: () => "cortex:normative:index",
+  normativeChunk: (id: string) => `cortex:normative:${id}`,
 } as const;

@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, LogIn, ShieldCheck } from "lucide-react";
+import { FlaskConical, LogIn } from "lucide-react";
 import type { RuntimeCapabilities } from "@/data/contracts";
 import { CortexLogo } from "@/client/features/cortex/components/icons";
 import { Button } from "@/client/components/ui/button";
@@ -46,38 +46,15 @@ export function LoginPage({
         }}
       >
         <div className="flex items-center gap-2.5" style={{ marginBottom: "var(--space-7)" }}>
+          <CortexLogo size={42} />
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: "var(--radius-md)",
-              background: "linear-gradient(140deg,var(--cortex-teal),var(--cortex-blue))",
-              display: "grid",
-              placeItems: "center",
+              fontSize: "var(--text-xl)",
+              fontWeight: 700,
+              color: "var(--cortex-ink)",
             }}
           >
-            <CortexLogo />
-          </div>
-          <div>
-            <div
-              style={{
-                fontSize: "var(--text-xl)",
-                fontWeight: 700,
-                color: "var(--cortex-ink)",
-              }}
-            >
-              Cortex
-            </div>
-            <div
-              className="font-mono"
-              style={{
-                fontSize: 9.5,
-                letterSpacing: "var(--tracking-mono-wide)",
-                color: "var(--cortex-fg-faint)",
-              }}
-            >
-              CLINICIAN WORKSPACE
-            </div>
+            Cortex
           </div>
         </div>
 
@@ -95,7 +72,7 @@ export function LoginPage({
             lineHeight: 1.5,
           }}
         >
-          Sign in with your clinician Google account to open your secure workspace.
+          Sign in with Google.
         </p>
 
         <Button
@@ -106,7 +83,7 @@ export function LoginPage({
           style={{ width: "100%", height: 44 }}
         >
           <LogIn aria-hidden="true" />
-          {loading ? "Opening secure sign-in…" : "Continue with Google"}
+          {loading ? "Signing in…" : "Continue with Google"}
         </Button>
 
         {!googleConfigured && (
@@ -185,25 +162,6 @@ export function LoginPage({
           </div>
         )}
 
-        <div
-          className="flex items-start gap-2.5"
-          style={{
-            marginTop: "var(--space-5)",
-            paddingTop: "var(--space-4)",
-            borderTop: "1px solid var(--cortex-border-soft)",
-            fontSize: "var(--text-xs)",
-            color: "var(--cortex-fg-faint)",
-            lineHeight: 1.5,
-          }}
-        >
-          <ShieldCheck
-            aria-hidden="true"
-            style={{ width: 16, height: 16, flex: "none", color: "var(--cortex-teal-dark)" }}
-          />
-          <span>
-            Google verifies your identity; Cortex uses a protected, HTTP-only clinician session.
-          </span>
-        </div>
       </section>
     </main>
   );

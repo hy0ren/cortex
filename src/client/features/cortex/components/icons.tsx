@@ -1,18 +1,36 @@
-export function CortexLogo() {
+import Image from "next/image";
+
+export function CortexLogo({ size = 30 }: { size?: number }) {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-      <circle cx="6" cy="7" r="2.4" fill="#fff" />
-      <circle cx="18" cy="6" r="2.1" fill="#fff" opacity=".85" />
-      <circle cx="12" cy="13" r="2.4" fill="#fff" />
-      <circle cx="7" cy="19" r="2.1" fill="#fff" opacity=".7" />
-      <circle cx="18" cy="17" r="2.1" fill="#fff" opacity=".85" />
-      <path
-        d="M6 7 12 13M18 6 12 13M12 13 7 19M12 13 18 17"
-        stroke="#fff"
-        strokeWidth="1.2"
-        opacity=".55"
+    <span
+      style={{
+        width: size,
+        height: size,
+        display: "block",
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: Math.max(6, Math.round(size * 0.24)),
+        background: "#fff",
+        boxShadow: "inset 0 0 0 1px rgba(16,26,39,.06)",
+      }}
+    >
+      <Image
+        src="/cortex-logo.png"
+        alt=""
+        width={1254}
+        height={1254}
+        priority
+        style={{
+          position: "absolute",
+          width: "190%",
+          height: "190%",
+          maxWidth: "none",
+          left: "-45%",
+          top: "-45%",
+          objectFit: "cover",
+        }}
       />
-    </svg>
+    </span>
   );
 }
 

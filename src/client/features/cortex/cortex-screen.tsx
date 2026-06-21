@@ -14,7 +14,7 @@ type CortexScreenProps = {
 
 export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
   if (!workspace.isReady || !workspace.patient || !workspace.draft) {
-    return <div style={{ flex: 1, display: "grid", placeItems: "center", color: "#647082" }}>Loading secure workspace…</div>;
+    return <div style={{ flex: 1, display: "grid", placeItems: "center", color: "#647082" }}>Loading…</div>;
   }
 
   switch (workspace.screen) {

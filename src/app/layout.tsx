@@ -22,8 +22,12 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cortex — Neuropsych Copilot",
-  description: "Documentation copilot for neuropsychologists",
+  title: "Cortex",
+  description: "Clinical report workspace",
+  icons: {
+    icon: "/cortex-logo.png",
+    apple: "/cortex-logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

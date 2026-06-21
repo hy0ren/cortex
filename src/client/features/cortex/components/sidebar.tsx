@@ -84,51 +84,13 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
       }}
     >
       <div style={{ padding: "var(--space-5) var(--space-5) var(--space-4)", display: "flex", alignItems: "center", gap: 11 }}>
-        <div
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: "var(--radius-sm)",
-            background: "linear-gradient(140deg,var(--cortex-teal),var(--cortex-blue))",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: "none",
-          }}
-        >
-          <CortexLogo />
-        </div>
-        <div>
-          <div style={{ fontSize: "var(--text-lg)", fontWeight: 700, letterSpacing: "-.01em", color: "#fff", lineHeight: 1 }}>
-            Cortex
-          </div>
-          <div
-            className="font-mono"
-            style={{
-              fontSize: 9.5,
-              letterSpacing: "var(--tracking-mono-wide)",
-              color: "#5e6b7e",
-              marginTop: 3,
-            }}
-          >
-            NEUROPSYCH COPILOT
-          </div>
+        <CortexLogo size={32} />
+        <div style={{ fontSize: "var(--text-lg)", fontWeight: 700, letterSpacing: "-.01em", color: "#fff", lineHeight: 1 }}>
+          Cortex
         </div>
       </div>
 
-      <div style={{ padding: "var(--space-2) var(--space-3)", display: "flex", flexDirection: "column", gap: 2 }}>
-        <div
-          className="font-mono"
-          style={{
-            fontSize: 9.5,
-            letterSpacing: "var(--tracking-mono-wide)",
-            color: "#4b576a",
-            padding: "var(--space-3) var(--space-3) 7px",
-          }}
-        >
-          WORKSPACE
-        </div>
-
+      <div style={{ padding: "var(--space-3)", display: "flex", flexDirection: "column", gap: 2 }}>
         <NavItem
           label="New session"
           style={navStyle("intake")}
@@ -178,17 +140,6 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
       </div>
 
       <div style={{ marginTop: 18, padding: "0 12px" }}>
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 9.5,
-            letterSpacing: ".13em",
-            color: "#4B576A",
-            padding: "8px 12px 9px",
-          }}
-        >
-          ACTIVE PATIENT
-        </div>
         <div
           style={{
             padding: "11px 12px",
@@ -260,12 +211,6 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
             <path d="M8 11V8a4 4 0 0 1 8 0v3" />
           </svg>
           <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "#5ccdbb" }}>Synthetic data · No PHI</span>
-        </div>
-        <div className="flex items-center gap-1.5" style={{ marginTop: 9, padding: "0 4px" }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5e6b7e" strokeWidth="2" strokeLinecap="round">
-            <path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z" />
-          </svg>
-          <span style={{ fontSize: "var(--text-xs)", color: "#6b7789" }}>PHI de‑identified on‑device</span>
         </div>
         <div
           style={{

@@ -6,12 +6,15 @@ import { Button } from "@/client/components/ui/button";
 type ExplainModalProps = {
   open: boolean;
   onClose: () => void;
+  patientFirstName?: string;
+  summaryText?: string;
 };
 
-const PATIENT_EXPLANATION =
+const FALLBACK_EXPLANATION =
   "Most parts of your thinking are working well — your problem-solving, language, and reasoning are right where we'd expect for your age. The main thing we noticed is memory for new information. Remembering things after a short delay was harder than the rest, and that's the part we want to keep an eye on. This isn't a final diagnosis on its own. The next step is a follow-up with your neurologist, and we'll check again in about a year to see how things are going.";
 
-export function ExplainModal({ open, onClose }: ExplainModalProps) {
+export function ExplainModal({ open, onClose, patientFirstName, summaryText }: ExplainModalProps) {
+  const explanation = summaryText ?? FALLBACK_EXPLANATION;
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -50,12 +53,12 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
       const res = await fetch("/api/speak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: PATIENT_EXPLANATION }),
+        body: JSON.stringify({ text: explanation }),
       });
 
       if (!res.ok) {
         // Fall back to browser TTS
-        const utterance = new SpeechSynthesisUtterance(PATIENT_EXPLANATION);
+        const utterance = new SpeechSynthesisUtterance(explanation);
         utterance.onend = () => setPlaying(false);
         window.speechSynthesis?.speak(utterance);
         setPlaying(true);
@@ -126,7 +129,7 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
             PLAIN‑LANGUAGE · READ ALOUD
           </div>
           <div style={{ fontSize: "var(--text-xl)", fontWeight: 700, letterSpacing: "-.01em" }}>
-            For Eleanor — what today&apos;s results mean
+            For {patientFirstName ?? "you"} — what today&apos;s results mean
           </div>
           <div className="flex items-center gap-3.5" style={{ marginTop: "var(--space-5)" }}>
             <button
@@ -181,17 +184,11 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
           </div>
         </div>
         <div style={{ padding: "var(--space-6) var(--space-6)" }}>
-          <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: "0 0 var(--space-4)" }}>
-            Most parts of your thinking are working well — your problem‑solving, language, and reasoning are right where we&apos;d expect for your age.
-          </p>
-          <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: "0 0 var(--space-4)" }}>
-            The main thing we noticed is <b>memory for new information</b>. Remembering things after a short delay was harder than the rest, and
-            that&apos;s the part we want to keep an eye on.
-          </p>
-          <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: 0 }}>
-            This isn&apos;t a final diagnosis on its own. The next step is a follow‑up with your neurologist, and we&apos;ll check again in about a
-            year to see how things are going.
-          </p>
+          {explanation.split(/\n+/).filter(Boolean).map((para, i) => (
+            <p key={i} className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: i === 0 ? "0 0 var(--space-4)" : "0 0 var(--space-4)" }}>
+              {para}
+            </p>
+          ))}
           <div
             className="flex items-center gap-2"
             style={{ marginTop: "var(--space-5)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--cortex-border-soft)" }}

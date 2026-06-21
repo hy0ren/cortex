@@ -29,9 +29,15 @@ const VOICE_SUPPORTED =
     (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
 
 export const VOICE_COMMANDS = [
-  { phrase: "open test results", description: "Jump to the report's Test Results section" },
-  { phrase: "read summary to patient", description: "Open the plain-language explanation for the patient" },
+  { phrase: "open test results", description: "Jump to the Test Results section in the report" },
+  { phrase: "go to report", description: "Switch to the report editor" },
   { phrase: "go to pipeline", description: "Switch to the pipeline view" },
+  { phrase: "go to history", description: "Switch to patient history" },
+  { phrase: "go to intake", description: "Switch to the intake screen" },
+  { phrase: "read summary to patient", description: "Open the plain-language explanation for the patient" },
+  { phrase: "next flag", description: "Scroll to the next Glia QA flag" },
+  { phrase: "finalize report", description: "Finalize and lock the report" },
+  { phrase: "start pipeline", description: "Begin report generation" },
 ] as const;
 
 export function useCortexWorkspace(session: AuthSession) {
@@ -45,6 +51,11 @@ export function useCortexWorkspace(session: AuthSession) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Stable refs so the voice recognition effect never needs to re-subscribe
+  // when finalizeDraft / startPipeline change identity.
+  const finalizeDraftRef = useRef<() => Promise<void>>(async () => undefined);
+  const startPipelineRef = useRef<() => Promise<void>>(async () => undefined);
 
   const refreshWorkspace = useCallback(async () => {
     setLoading(true);
@@ -121,13 +132,38 @@ export function useCortexWorkspace(session: AuthSession) {
             document.getElementById("section-test-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
           }, 150);
         });
-        setMessage("Voice command: opened Test Results.");
-      } else if (transcript.includes("read summary")) {
-        setExplainOpen(true);
-        setMessage("Voice command: opened patient summary.");
+        setMessage("Voice: opened Test Results.");
+      } else if (transcript.includes("go to report") || transcript.includes("open report")) {
+        setScreen("report");
+        setMessage("Voice: switched to report.");
       } else if (transcript.includes("go to pipeline") || transcript.includes("open pipeline")) {
         setScreen("pipeline");
-        setMessage("Voice command: switched to pipeline.");
+        setMessage("Voice: switched to pipeline.");
+      } else if (transcript.includes("go to history") || transcript.includes("open history")) {
+        setScreen("history");
+        setMessage("Voice: switched to patient history.");
+      } else if (transcript.includes("go to intake") || transcript.includes("new session")) {
+        setScreen("intake");
+        setMessage("Voice: switched to intake.");
+      } else if (transcript.includes("read summary") || transcript.includes("explain to patient")) {
+        setExplainOpen(true);
+        setMessage("Voice: opened patient explanation.");
+      } else if (transcript.includes("next flag")) {
+        const flagCards = document.querySelectorAll<HTMLElement>(".cortex-flag-card");
+        if (flagCards.length > 0) {
+          const currentScroll = window.scrollY;
+          const next = Array.from(flagCards).find(
+            (el) => el.getBoundingClientRect().top + window.scrollY > currentScroll + 80
+          ) ?? flagCards[0];
+          next?.scrollIntoView({ behavior: "smooth", block: "center" });
+          setMessage("Voice: scrolled to next flag.");
+        }
+      } else if (transcript.includes("finalize report") || transcript.includes("finalise report")) {
+        void finalizeDraftRef.current();
+        setMessage("Voice: finalizing report.");
+      } else if (transcript.includes("start pipeline") || transcript.includes("generate report")) {
+        void startPipelineRef.current();
+        setMessage("Voice: starting pipeline.");
       }
     };
 
@@ -194,6 +230,7 @@ export function useCortexWorkspace(session: AuthSession) {
       setScreen("pipeline");
     }
   }, [runAction, workspace]);
+  startPipelineRef.current = startPipeline;
 
   const togglePipeline = useCallback(async () => {
     if (!pipeline) return;
@@ -241,6 +278,7 @@ export function useCortexWorkspace(session: AuthSession) {
     );
     if (result) setWorkspace({ ...workspace, draft: result.draft });
   }, [runAction, workspace]);
+  finalizeDraftRef.current = finalizeDraft;
 
   const resolveFlag = useCallback(async (id: string, resolution: "confirmed" | "dismissed") => {
     if (!workspace) return;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState, type ChangeEvent } from "react";
 import type { GliaFlag } from "../model/types";
 import type { PatientRecord, ReportDraft } from "@/data/contracts";
 import { flagStyle } from "@/data/demo/cortex";
@@ -15,6 +16,7 @@ type ReportScreenProps = {
   onResolveFlag: (id: string, resolution: "confirmed" | "dismissed") => void;
   onOpenExplain: () => void;
   onFinalize: () => Promise<void>;
+  onSaveSections: (sections: Record<string, string>) => Promise<void>;
 };
 
 function classificationStyle(warn?: boolean, alert?: boolean) {
@@ -60,10 +62,30 @@ function FlagMarkers({ flags }: { flags: GliaFlag[] }) {
   );
 }
 
-export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpenExplain, onFinalize }: ReportScreenProps) {
+export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpenExplain, onFinalize, onSaveSections }: ReportScreenProps) {
   const status = draft.status;
   const age = Math.max(0, new Date().getFullYear() - new Date(patient.demographics.dateOfBirth).getFullYear());
   const flagsBySection = (section: string) => flags.filter((f) => f.section === section);
+
+  const [sections, setSections] = useState<Record<string, string>>(draft.sections ?? {});
+  const [savingSection, setSavingSection] = useState(false);
+
+  const handleSectionBlur = useCallback(async () => {
+    setSavingSection(true);
+    try {
+      await onSaveSections(sections);
+    } finally {
+      setSavingSection(false);
+    }
+  }, [onSaveSections, sections]);
+
+  function editableSection(key: string) {
+    return {
+      value: sections[key] ?? "",
+      onChange: (e: ChangeEvent<HTMLTextAreaElement>) =>
+        setSections((prev) => ({ ...prev, [key]: e.target.value })),
+    };
+  }
 
   return (
     <div className="sa" style={{ flex: 1, overflowY: "auto", background: "var(--cortex-canvas)" }}>
@@ -90,7 +112,9 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
               {status === "finalized" ? "Final" : "Draft"}
             </Badge>
           </div>
-          <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", marginTop: 3 }}>Last edited just now · autosaved</div>
+          <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", marginTop: 3 }}>
+            {savingSection ? "Saving…" : "Last edited just now · autosaved"}
+          </div>
         </div>
         <div className="flex items-center gap-2.5" style={{ marginLeft: "auto" }}>
           <div
@@ -179,21 +203,41 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
           </div>
 
           {[
-            { key: "Reason for Referral", title: "Reason for Referral", body: draft.sections.reasonForReferral },
-            { key: "History", title: "History of Presenting Concern", body: draft.sections.history },
-            { key: "Behavioral Observations", title: "Behavioral Observations", body: draft.sections.behavioralObservations },
+            { sectionKey: "reasonForReferral", flagKey: "Reason for Referral", title: "Reason for Referral" },
+            { sectionKey: "history", flagKey: "History", title: "History of Presenting Concern" },
+            { sectionKey: "behavioralObservations", flagKey: "Behavioral Observations", title: "Behavioral Observations" },
           ].map((section) => (
-            <section key={section.key} style={{ marginBottom: "var(--space-7)" }}>
+            <section key={section.sectionKey} style={{ marginBottom: "var(--space-7)" }}>
               <h3
                 className="font-serif"
                 style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}
               >
                 {section.title}
               </h3>
-              <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", margin: 0 }}>
-                {section.body}
-                <FlagMarkers flags={flagsBySection(section.key)} />
-              </p>
+              <div style={{ position: "relative" }}>
+                <textarea
+                  className="font-serif"
+                  {...editableSection(section.sectionKey)}
+                  style={{
+                    width: "100%",
+                    minHeight: 100,
+                    resize: "vertical",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "1px dashed transparent",
+                    outline: "none",
+                    fontSize: "var(--text-md)",
+                    lineHeight: 1.74,
+                    color: "var(--cortex-ink-3)",
+                    fontFamily: "inherit",
+                    padding: 0,
+                    cursor: "text",
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--cortex-border-stronger)"; }}
+                  onBlur={(e) => { e.currentTarget.style.borderBottomColor = "transparent"; void handleSectionBlur(); }}
+                />
+                <FlagMarkers flags={flagsBySection(section.flagKey)} />
+              </div>
             </section>
           ))}
 
@@ -300,20 +344,58 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
             <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}>
               Interpretation
             </h3>
-            <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", margin: 0 }}>
-              {draft.sections.interpretation}
+            <div style={{ position: "relative" }}>
+              <textarea
+                className="font-serif"
+                {...editableSection("interpretation")}
+                style={{
+                  width: "100%",
+                  minHeight: 100,
+                  resize: "vertical",
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: "1px dashed transparent",
+                  outline: "none",
+                  fontSize: "var(--text-md)",
+                  lineHeight: 1.74,
+                  color: "var(--cortex-ink-3)",
+                  fontFamily: "inherit",
+                  padding: 0,
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--cortex-border-stronger)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderBottomColor = "transparent"; void handleSectionBlur(); }}
+              />
               <FlagMarkers flags={flagsBySection("Interpretation")} />
-            </p>
+            </div>
           </section>
 
           <section>
             <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}>
               Summary & Recommendations
             </h3>
-            <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", margin: "0 0 var(--space-3)" }}>
-              {draft.sections.summary}
+            <div style={{ position: "relative", marginBottom: "var(--space-3)" }}>
+              <textarea
+                className="font-serif"
+                {...editableSection("summary")}
+                style={{
+                  width: "100%",
+                  minHeight: 80,
+                  resize: "vertical",
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: "1px dashed transparent",
+                  outline: "none",
+                  fontSize: "var(--text-md)",
+                  lineHeight: 1.74,
+                  color: "var(--cortex-ink-3)",
+                  fontFamily: "inherit",
+                  padding: 0,
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--cortex-border-stronger)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderBottomColor = "transparent"; void handleSectionBlur(); }}
+              />
               <FlagMarkers flags={flagsBySection("Summary")} />
-            </p>
+            </div>
             <ol className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: 0, paddingLeft: 20 }}>
               {[
                 "Neurology follow‑up with consideration of structural MRI and biomarker assessment.",

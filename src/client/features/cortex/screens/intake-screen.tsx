@@ -197,16 +197,12 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                   </div>
                 </div>
                 <div
-                  className="font-serif"
                   style={{
                     marginTop: "var(--space-5)",
                     background: "var(--cortex-surface-muted)",
                     border: "1px solid var(--cortex-border-soft)",
                     borderRadius: "var(--radius-md)",
                     padding: "var(--space-4) var(--space-4)",
-                    fontSize: "var(--text-sm)",
-                    lineHeight: 1.7,
-                    color: "var(--cortex-ink-4)",
                   }}
                 >
                   <span
@@ -221,19 +217,38 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                   >
                     {recording ? "LIVE TRANSCRIPT · WERNICKE LISTENING" : "DICTATION PAUSED"}
                   </span>
-                  &ldquo;{transcript}
-                  <span
+                  <textarea
+                    className="font-serif"
+                    value={transcript}
+                    onChange={(e) => setTranscript(e.target.value)}
+                    placeholder="Dictation will appear here…"
                     style={{
-                      display: "inline-block",
-                      width: 2,
-                      height: 14,
-                      background: "var(--cortex-teal)",
-                      marginLeft: 2,
-                      verticalAlign: -2,
-                      animation: "blink 1s step-end infinite",
+                      width: "100%",
+                      minHeight: 120,
+                      resize: "vertical",
+                      background: "transparent",
+                      border: "none",
+                      outline: "none",
+                      fontSize: "var(--text-sm)",
+                      lineHeight: 1.7,
+                      color: "var(--cortex-ink-4)",
+                      fontFamily: "inherit",
+                      padding: 0,
                     }}
                   />
-                  &rdquo;
+                  {recording && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 2,
+                        height: 14,
+                        background: "var(--cortex-teal)",
+                        marginLeft: 2,
+                        verticalAlign: -2,
+                        animation: "blink 1s step-end infinite",
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             </div>

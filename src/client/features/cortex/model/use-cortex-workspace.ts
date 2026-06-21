@@ -210,6 +210,17 @@ export function useCortexWorkspace(session: AuthSession) {
     );
   }, [runAction, workspace]);
 
+  const saveDraftSections = useCallback(async (sections: Record<string, string>) => {
+    if (!workspace) return;
+    await runAction(
+      () => apiRequest(`/api/drafts/${workspace.draft.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ sections }),
+      }),
+      "Draft saved."
+    );
+  }, [runAction, workspace]);
+
   const finalizeDraft = useCallback(async () => {
     if (!workspace) return;
     const result = await runAction(
@@ -308,6 +319,7 @@ export function useCortexWorkspace(session: AuthSession) {
     startPipeline,
     togglePipeline,
     saveDraft,
+    saveDraftSections,
     finalizeDraft,
     uploadFile,
     transcribeFile,
@@ -316,7 +328,7 @@ export function useCortexWorkspace(session: AuthSession) {
   }), [
     busy, draft, explainOpen, exportReport, finalizeDraft, flags, isReady,
     listening, message, navStyle, patient, pipeline, refreshWorkspace,
-    resolveFlag, saveDraft, screen, session, startPipeline, togglePipeline,
+    resolveFlag, saveDraft, saveDraftSections, screen, session, startPipeline, togglePipeline,
     transcribeFile, uploadFile, uploads,
   ]);
 }

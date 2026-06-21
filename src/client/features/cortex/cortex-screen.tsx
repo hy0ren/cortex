@@ -40,6 +40,7 @@ export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
           onResolveFlag={workspace.resolveFlag}
           onOpenExplain={workspace.openExplanation}
           onFinalize={workspace.finalizeDraft}
+          onSaveSections={workspace.saveDraftSections}
         />
       );
     case "history":

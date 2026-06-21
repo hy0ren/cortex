@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/client/components/ui/button";
 
 type ExplainModalProps = {
@@ -8,23 +8,77 @@ type ExplainModalProps = {
   onClose: () => void;
 };
 
+const PATIENT_EXPLANATION =
+  "Most parts of your thinking are working well — your problem-solving, language, and reasoning are right where we'd expect for your age. The main thing we noticed is memory for new information. Remembering things after a short delay was harder than the rest, and that's the part we want to keep an eye on. This isn't a final diagnosis on its own. The next step is a follow-up with your neurologist, and we'll check again in about a year to see how things are going.";
+
 export function ExplainModal({ open, onClose }: ExplainModalProps) {
   const [playing, setPlaying] = useState(false);
-  const patientExplanation = "Most parts of your thinking are working well. The main thing we noticed is memory for new information. This is not a final diagnosis on its own. The next step is follow-up with your neurologist and another check in about a year.";
+  const [loading, setLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      if (audioRef.current?.src) URL.revokeObjectURL(audioRef.current.src);
+    };
+  }, []);
 
-  function togglePlayback() {
-    if (!("speechSynthesis" in window)) return;
+  useEffect(() => {
+    if (!open) {
+      audioRef.current?.pause();
+      setPlaying(false);
+      setLoading(false);
+    }
+  }, [open]);
+
+  async function togglePlayback() {
     if (playing) {
-      window.speechSynthesis.cancel();
+      audioRef.current?.pause();
       setPlaying(false);
       return;
     }
-    const utterance = new SpeechSynthesisUtterance(patientExplanation);
-    utterance.onend = () => setPlaying(false);
-    window.speechSynthesis.speak(utterance);
-    setPlaying(true);
+
+    // If we already have audio loaded, just resume
+    if (audioRef.current?.src && !audioRef.current.ended) {
+      void audioRef.current.play();
+      setPlaying(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: PATIENT_EXPLANATION }),
+      });
+
+      if (!res.ok) {
+        // Fall back to browser TTS
+        const utterance = new SpeechSynthesisUtterance(PATIENT_EXPLANATION);
+        utterance.onend = () => setPlaying(false);
+        window.speechSynthesis?.speak(utterance);
+        setPlaying(true);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (audioRef.current) {
+        URL.revokeObjectURL(audioRef.current.src);
+        audioRef.current.src = url;
+      } else {
+        const audio = new Audio(url);
+        audio.onended = () => setPlaying(false);
+        audio.onerror = () => setPlaying(false);
+        audioRef.current = audio;
+      }
+      void audioRef.current.play();
+      setPlaying(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (!open) return null;
@@ -77,8 +131,9 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
           <div className="flex items-center gap-3.5" style={{ marginTop: "var(--space-5)" }}>
             <button
               type="button"
-              onClick={togglePlayback}
+              onClick={() => void togglePlayback()}
               aria-label={playing ? "Stop explanation" : "Read explanation aloud"}
+              disabled={loading}
               style={{
                 width: 48,
                 height: 48,
@@ -88,13 +143,22 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "pointer",
+                cursor: loading ? "wait" : "pointer",
                 flex: "none",
+                opacity: loading ? 0.7 : 1,
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--cortex-teal-dark)">
-                {playing ? <path d="M7 6h4v12H7zM13 6h4v12h-4z" /> : <path d="M7 5l12 7-12 7z" />}
-              </svg>
+              {loading ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-teal-dark)" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83">
+                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                  </path>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--cortex-teal-dark)">
+                  {playing ? <path d="M7 6h4v12H7zM13 6h4v12h-4z" /> : <path d="M7 5l12 7-12 7z" />}
+                </svg>
+              )}
             </button>
             <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 2, height: 30 }}>
               {[40, 75, 55, 90, 50, 70, 35, 60].map((h, i) => (
@@ -105,14 +169,14 @@ export function ExplainModal({ open, onClose }: ExplainModalProps) {
                     height: `${h}%`,
                     background: i === 3 ? "#fff" : "rgba(255,255,255,.6)",
                     borderRadius: 2,
-                    animation: "wave 1s infinite",
+                    animation: playing ? "wave 1s infinite" : undefined,
                     animationDelay: `${i * 0.12}s`,
                   }}
                 />
               ))}
             </div>
             <span className="font-mono" style={{ fontSize: "var(--text-sm)", opacity: 0.9 }}>
-              0:48
+              {loading ? "···" : "0:48"}
             </span>
           </div>
         </div>

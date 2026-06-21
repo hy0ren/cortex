@@ -9,17 +9,21 @@ import { requireRequestSession } from "@/server/auth/request-session";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-     const session = await requireRequestSession();
-     const { id } = await params;
-     const run = await getPipelineRun(id);
-     if (!run) return fail("NOT_FOUND", "Pipeline run not found", 404);
+    const calledByBand = verifyBandSyncSecret(request);
+    const session = calledByBand ? null : await requireRequestSession();
+    const { id } = await params;
+    const run = await getPipelineRun(id);
+    if (!run) return fail("NOT_FOUND", "Pipeline run not found", 404);
+    if (session && run.clinicianId !== session.user.id) {
+      return fail("FORBIDDEN", "Pipeline run does not belong to this session", 403);
+    }
 
-     const patient = await findPatient(run.patientId);
-     const draft = await getReportDraft(run.draftId);
-     if (!patient || !draft) return fail("NOT_FOUND", "Session context not found");
+    const patient = await findPatient(run.patientId);
+    const draft = await getReportDraft(run.draftId);
+    if (!patient || !draft) return fail("NOT_FOUND", "Session context not found");
 
-     return ok({ run, patient, draft });
+    return ok({ run, patient, draft });
   } catch (error) {
-     return routeError(error, { route: "pipeline.context" });
+    return routeError(error, { route: "pipeline.context" });
   }
 }

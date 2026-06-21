@@ -105,6 +105,7 @@ export async function connectRedis(): Promise<Redis> {
   }
   if (!redis) {
     redis = new Redis(await getRedisUrl(), {
+      family: 0,
       maxRetriesPerRequest: 3,
       lazyConnect: true,
       enableReadyCheck: true,

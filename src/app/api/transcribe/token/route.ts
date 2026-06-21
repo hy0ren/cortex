@@ -2,7 +2,6 @@ import { requireRequestSession } from "@/server/auth/request-session";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { fail, ok, routeError } from "@/server/http/api-response";
 import { getDeepgramClient } from "@/server/speech/deepgram";
-import { getEnv } from "@/server/config/env";
 
 export async function GET() {
   try {
@@ -14,7 +13,6 @@ export async function GET() {
 
     const deepgram = getDeepgramClient();
     
-    // Attempt to generate a temporary project key
     try {
       const { result: projectsResult, error: projectsError } = await deepgram.manage.getProjects();
       if (projectsError) throw projectsError;
@@ -22,26 +20,27 @@ export async function GET() {
       const projectId = projectsResult?.projects?.[0]?.project_id;
       if (projectId) {
         const { result: keyResult, error: keyError } = await deepgram.manage.createProjectKey(projectId, {
-          comment: "temp_browser_token",
+          comment: "cortex-live-transcription",
           scopes: ["usage:write"],
-          time_to_live_in_seconds: 3600, // 1 hour
+          time_to_live_in_seconds: 300,
         });
-        
+        if (keyError) throw keyError;
         if (keyResult?.key) {
           return ok({ token: keyResult.key });
         }
       }
     } catch (err) {
-      console.warn("[cortex-deepgram] Failed to generate temp key, falling back to main key:", err instanceof Error ? err.message : err);
-    }
-    
-    // Fallback to main key for local development if the API key lacks management scopes
-    const { deepgram: config } = getEnv();
-    if (config.apiKey) {
-      return ok({ token: config.apiKey });
+      console.warn(
+        "[cortex-deepgram] Failed to generate a temporary browser key:",
+        err instanceof Error ? err.message : err
+      );
     }
 
-    return fail("INTERNAL_ERROR", "Failed to retrieve Deepgram token");
+    return fail(
+      "TEMPORARY_TOKEN_UNAVAILABLE",
+      "Live transcription is unavailable because a temporary Deepgram key could not be created",
+      503
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "Authentication required") {
       return fail("UNAUTHORIZED", error.message, 401);

@@ -1,13 +1,14 @@
 import * as xlsx from "xlsx";
 import { parse as csvParse } from "csv-parse/sync";
 import type { TestScore } from "@/data/contracts";
-const pdfParse = require("pdf-parse");
 
-function mapRowToTestScore(row: any): TestScore | null {
+type ScoreRow = Record<string, unknown>;
+
+function mapRowToTestScore(row: ScoreRow): TestScore | null {
   const normalized = Object.keys(row).reduce((acc, key) => {
     acc[key.toLowerCase().trim()] = row[key];
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as ScoreRow);
 
   const testName = normalized["test"] || normalized["measure"] || normalized["test name"];
   const subtest = normalized["subtest"] || normalized["subtest name"];
@@ -17,8 +18,8 @@ function mapRowToTestScore(row: any): TestScore | null {
 
   if (!testName || !standardScoreStr) return null;
 
-  const standardScore = parseFloat(standardScoreStr);
-  const percentile = parseFloat(percentileStr);
+  const standardScore = Number.parseFloat(String(standardScoreStr));
+  const percentile = Number.parseFloat(String(percentileStr ?? ""));
 
   if (isNaN(standardScore)) return null;
 
@@ -36,34 +37,42 @@ export async function parseFileToTestScores(file: File): Promise<TestScore[]> {
   const filename = file.name.toLowerCase();
 
   if (filename.endsWith(".csv")) {
-    const records = csvParse(buffer, { columns: true, skip_empty_lines: true });
-    return records.map(mapRowToTestScore).filter((s): s is TestScore => s !== null);
+    const records: unknown[] = csvParse(buffer, {
+      columns: true,
+      skip_empty_lines: true,
+    });
+    return records
+      .filter((row): row is ScoreRow => typeof row === "object" && row !== null)
+      .map(mapRowToTestScore)
+      .filter((score): score is TestScore => score !== null);
   } else if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
     const workbook = xlsx.read(buffer, { type: "buffer" });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-    const records = xlsx.utils.sheet_to_json(firstSheet);
+    const records = xlsx.utils.sheet_to_json<ScoreRow>(firstSheet);
     return records.map(mapRowToTestScore).filter((s): s is TestScore => s !== null);
   } else if (filename.endsWith(".json")) {
     const str = buffer.toString("utf-8");
     try {
-      const parsed = JSON.parse(str);
-      const arr = Array.isArray(parsed) ? parsed : parsed.scores || [];
-      return arr.map(mapRowToTestScore).filter((s: any): s is TestScore => s !== null);
+      const parsed: unknown = JSON.parse(str);
+      const scores =
+        typeof parsed === "object" && parsed !== null && "scores" in parsed
+          ? (parsed as { scores?: unknown }).scores
+          : undefined;
+      const rows = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(scores)
+          ? scores
+          : [];
+      return rows
+        .filter((row): row is ScoreRow => typeof row === "object" && row !== null)
+        .map(mapRowToTestScore)
+        .filter((score): score is TestScore => score !== null);
     } catch {
       return [];
     }
   } else if (filename.endsWith(".pdf")) {
-    // Attempt PDF extraction
-    try {
-      const data = await pdfParse(buffer);
-      // We would ideally use an LLM here if permitted, but per prompt:
-      // "If reliable extraction is not possible, return proposed rows for clinician review"
-      // We'll return some empty proposals based on simple heuristics or just return empty for manual review.
-      // For now, we return empty so the clinician can review and manually enter.
-      return [];
-    } catch {
-      return [];
-    }
+    // PDF score extraction is intentionally deferred for clinician review.
+    return [];
   }
 
   return [];

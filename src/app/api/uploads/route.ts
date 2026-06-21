@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { UploadedAsset } from "@/data/contracts";
+import type { TestScore, UploadedAsset } from "@/data/contracts";
 import { requireRequestSession } from "@/server/auth/request-session";
 import { fail, ok, routeError } from "@/server/http/api-response";
 import { getMemoryStore } from "@/server/persistence/memory-store";
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       : /\.(csv|xlsx?|json)$/i.test(file.name)
         ? "scores"
         : "document";
-    const asset: UploadedAsset & { parsedScores?: any[] } = {
+    const asset: UploadedAsset & { parsedScores?: TestScore[] } = {
       id: randomUUID(),
       name: file.name,
       kind,
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
           encounter.testBattery = [...(encounter.testBattery || []), ...scores];
           await storeEncounter(encounter);
         }
-      } catch (err) {
+      } catch {
         asset.status = "error";
         asset.detail = "Failed to parse file format.";
       }

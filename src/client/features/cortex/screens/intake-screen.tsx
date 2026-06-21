@@ -28,7 +28,6 @@ export function IntakeScreen({ patient, encounter, uploads, busy, onUpload, onTr
   const bars = buildWaveBars();
   const fileInput = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
   const [captureMode, setCaptureMode] = useState<"live" | "upload">("live");
   const [recording, setRecording] = useState(false);
   const [transcript, setTranscript] = useState(encounter?.transcript ?? "");

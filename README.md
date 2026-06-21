@@ -58,6 +58,9 @@ npm install
 npm run dev
 ```
 
+For the production Railway topology, service configuration, secrets, backups,
+Firebase setup, and PHI gate, see [`docs/railway-deployment.md`](docs/railway-deployment.md).
+
 The app is usable before credentials are added:
 
 - Enter the synthetic demo workspace without creating an account.

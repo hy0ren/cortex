@@ -3,16 +3,13 @@
 import { useMemo, useState } from "react";
 import type { PatientRecord, ReportDraft } from "@/data/contracts";
 import { Button } from "@/client/components/ui/button";
-import { buildEncounterTimeline, type EncounterRow } from "../model/history-view";
+import { buildEncounterTimeline } from "../model/history-view";
 
 type HistoryScreenProps = {
   patient: PatientRecord;
   draft: ReportDraft;
   onGoReport: () => void;
 };
-
-type EncounterAction = EncounterRow["actions"][number];
-type Encounter = EncounterRow;
 
 function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (

@@ -54,6 +54,8 @@ export function CortexApp({ session, onSignOut }: CortexAppProps) {
       <ExplainModal
         open={workspace.explainOpen}
         onClose={workspace.closeExplanation}
+        patientFirstName={workspace.patient?.demographics.name.split(" ")[0]}
+        summaryText={workspace.draft?.sections?.summary ?? undefined}
       />
       {workspace.message && (
         <button

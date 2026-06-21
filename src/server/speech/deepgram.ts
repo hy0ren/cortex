@@ -42,7 +42,7 @@ export async function transcribeVisitAudio(
   const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
     buffer,
     {
-      model: "nova-2-medical",
+      model: "nova-3-medical",
       smart_format: true,
       punctuate: true,
       diarize: true,

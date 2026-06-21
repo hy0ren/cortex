@@ -32,6 +32,6 @@ export async function POST(request: Request) {
     getMemoryStore().uploads.set(session.user.id, [...uploads, asset]);
     return ok({ asset }, { status: 201 });
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "uploads.create" });
   }
 }

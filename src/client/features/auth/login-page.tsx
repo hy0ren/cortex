@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import type { RuntimeCapabilities } from "@/data/contracts";
 import { CortexLogo } from "@/client/features/cortex/components/icons";
+import { Button } from "@/client/components/ui/button";
 
 type LoginPageProps = {
   capabilities: RuntimeCapabilities | null;
@@ -40,9 +41,8 @@ export function LoginPage({ capabilities, loading, error, onSignIn, onRegister }
         minHeight: "100vh",
         display: "grid",
         placeItems: "center",
-        padding: 24,
-        background:
-          "radial-gradient(circle at 20% 10%, rgba(14,156,137,.15), transparent 35%), #0B1220",
+        padding: "var(--space-6)",
+        background: "radial-gradient(circle at 20% 10%, rgba(14,156,137,.15), transparent 35%), var(--cortex-nav)",
       }}
     >
       <form
@@ -50,26 +50,28 @@ export function LoginPage({ capabilities, loading, error, onSignIn, onRegister }
         style={{
           width: "100%",
           maxWidth: 420,
-          background: "#fff",
-          borderRadius: 18,
-          padding: 32,
+          background: "var(--cortex-surface)",
+          borderRadius: "var(--radius-xl)",
+          padding: "var(--space-7)",
           boxShadow: "0 28px 80px rgba(0,0,0,.34)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 28 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(140deg,#0E9C89,#2F5BD0)", display: "grid", placeItems: "center" }}>
+        <div className="flex items-center gap-2.5" style={{ marginBottom: "var(--space-7)" }}>
+          <div style={{ width: 38, height: 38, borderRadius: "var(--radius-md)", background: "linear-gradient(140deg,var(--cortex-teal),var(--cortex-blue))", display: "grid", placeItems: "center" }}>
             <CortexLogo />
           </div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#101a27" }}>Cortex</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: ".13em", color: "#8A95A3" }}>CLINICIAN WORKSPACE</div>
+            <div style={{ fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--cortex-ink)" }}>Cortex</div>
+            <div className="font-mono" style={{ fontSize: 9.5, letterSpacing: "var(--tracking-mono-wide)", color: "var(--cortex-fg-faint)" }}>
+              CLINICIAN WORKSPACE
+            </div>
           </div>
         </div>
 
-        <h1 style={{ margin: 0, fontSize: 24, color: "#101a27" }}>
+        <h1 style={{ margin: 0, fontSize: "var(--text-2xl)", color: "var(--cortex-ink)" }}>
           {mode === "register" ? "Create your account" : "Welcome back"}
         </h1>
-        <p style={{ margin: "7px 0 24px", color: "#647082", fontSize: 13.5, lineHeight: 1.5 }}>
+        <p style={{ margin: "var(--space-2) 0 var(--space-6)", color: "var(--cortex-fg-subtle)", fontSize: "var(--text-md)", lineHeight: 1.5 }}>
           {mode === "register"
             ? "Set up your clinician workspace. You’ll be signed in immediately."
             : "Sign in to open your secure neuropsychology workspace."}
@@ -77,27 +79,27 @@ export function LoginPage({ capabilities, loading, error, onSignIn, onRegister }
 
         {mode === "register" && (
           <>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3A4654", marginBottom: 7 }}>Full name</label>
+            <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--cortex-ink-4)", marginBottom: "var(--space-2)" }}>Full name</label>
             <input
               type="text"
               required
               autoComplete="name"
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              style={{ width: "100%", height: 44, border: "1px solid #DCE0E7", borderRadius: 9, padding: "0 12px", fontSize: 14, marginBottom: 16 }}
+              style={{ width: "100%", height: 44, border: "1px solid var(--cortex-border-strong)", borderRadius: "var(--radius-md)", padding: "0 12px", fontSize: "var(--text-base)", marginBottom: "var(--space-4)" }}
             />
           </>
         )}
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3A4654", marginBottom: 7 }}>Email</label>
+        <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--cortex-ink-4)", marginBottom: "var(--space-2)" }}>Email</label>
         <input
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          style={{ width: "100%", height: 44, border: "1px solid #DCE0E7", borderRadius: 9, padding: "0 12px", fontSize: 14, marginBottom: 16 }}
+          style={{ width: "100%", height: 44, border: "1px solid var(--cortex-border-strong)", borderRadius: "var(--radius-md)", padding: "0 12px", fontSize: "var(--text-base)", marginBottom: "var(--space-4)" }}
         />
-        <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3A4654", marginBottom: 7 }}>Password</label>
+        <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--cortex-ink-4)", marginBottom: "var(--space-2)" }}>Password</label>
         <input
           type="password"
           required
@@ -105,12 +107,12 @@ export function LoginPage({ capabilities, loading, error, onSignIn, onRegister }
           autoComplete={mode === "register" ? "new-password" : "current-password"}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          style={{ width: "100%", height: 44, border: "1px solid #DCE0E7", borderRadius: 9, padding: "0 12px", fontSize: 14 }}
+          style={{ width: "100%", height: 44, border: "1px solid var(--cortex-border-strong)", borderRadius: "var(--radius-md)", padding: "0 12px", fontSize: "var(--text-base)" }}
         />
 
         {mode === "register" && (
           <>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#3A4654", margin: "16px 0 7px" }}>Confirm password</label>
+            <label style={{ display: "block", fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--cortex-ink-4)", margin: "var(--space-4) 0 var(--space-2)" }}>Confirm password</label>
             <input
               type="password"
               required
@@ -118,29 +120,28 @@ export function LoginPage({ capabilities, loading, error, onSignIn, onRegister }
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              style={{ width: "100%", height: 44, border: "1px solid #DCE0E7", borderRadius: 9, padding: "0 12px", fontSize: 14 }}
+              style={{ width: "100%", height: 44, border: "1px solid var(--cortex-border-strong)", borderRadius: "var(--radius-md)", padding: "0 12px", fontSize: "var(--text-base)" }}
             />
           </>
         )}
 
-        {(formError || error) && <div role="alert" style={{ color: "#A8423A", background: "#FAEAE8", borderRadius: 8, padding: "9px 11px", fontSize: 12, marginTop: 14 }}>{formError ?? error}</div>}
+        {(formError || error) && (
+          <div role="alert" style={{ color: "#a8423a", background: "#faeae8", borderRadius: "var(--radius-sm)", padding: "9px 11px", fontSize: "var(--text-xs)", marginTop: "var(--space-4)" }}>
+            {formError ?? error}
+          </div>
+        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="cortex-teal-btn"
-          style={{ width: "100%", height: 44, marginTop: 20, border: 0, borderRadius: 10, background: "#0E9C89", color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "wait" : "pointer", opacity: loading ? .7 : 1 }}
-        >
+        <Button type="submit" variant="cortex-primary" disabled={loading} style={{ width: "100%", height: 44, marginTop: "var(--space-5)" }}>
           {loading
             ? mode === "register" ? "Creating account…" : "Signing in…"
             : mode === "register" ? "Create account" : "Sign in"}
-        </button>
+        </Button>
 
         <button
           type="button"
           disabled={loading}
           onClick={() => {
-            setMode((current) => current === "sign-in" ? "register" : "sign-in");
+            setMode((current) => (current === "sign-in" ? "register" : "sign-in"));
             setFormError(null);
             setConfirmPassword("");
             if (mode === "sign-in") {
@@ -150,21 +151,19 @@ export function LoginPage({ capabilities, loading, error, onSignIn, onRegister }
           }}
           style={{
             width: "100%",
-            marginTop: 12,
+            marginTop: "var(--space-3)",
             border: 0,
             background: "transparent",
-            color: "#0B7E70",
-            fontSize: 12.5,
+            color: "var(--cortex-teal-dark)",
+            fontSize: "var(--text-xs)",
             fontWeight: 700,
             cursor: "pointer",
           }}
         >
-          {mode === "register"
-            ? "Already have an account? Sign in"
-            : "New to Cortex? Create an account"}
+          {mode === "register" ? "Already have an account? Sign in" : "New to Cortex? Create an account"}
         </button>
 
-        <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid #EEF0F3", fontSize: 11.5, color: "#8A95A3", lineHeight: 1.5 }}>
+        <div style={{ marginTop: "var(--space-5)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--cortex-border-soft)", fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", lineHeight: 1.5 }}>
           {capabilities?.firebase === "configured"
             ? "Firebase authentication is connected. Accounts use Firebase identity with a protected Cortex server session."
             : "Development accounts use securely hashed passwords and move to Firebase automatically once it is configured."}

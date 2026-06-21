@@ -47,7 +47,7 @@ export function buildWaveBars(): WaveBar[] {
     return {
       h: `${h}px`,
       d: `${(i * 0.045).toFixed(2)}s`,
-      c: i < 30 ? "#0E9C89" : "#CBD3DC",
+      c: i < 30 ? "var(--cortex-teal)" : "var(--cortex-fg-disabled)",
     };
   });
 }

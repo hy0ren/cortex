@@ -48,6 +48,6 @@ export async function DELETE(request: NextRequest) {
     });
     return response;
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "auth.session.delete" });
   }
 }

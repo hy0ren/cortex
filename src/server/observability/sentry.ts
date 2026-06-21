@@ -22,4 +22,19 @@ export function captureAgentError(
   });
 }
 
+/** For graceful degradations (e.g. Redis unavailable, falling back to memory) — visible in Sentry without counting as a hard error. */
+export function captureDegradedFallback(
+  message: string,
+  context: { area: string; cause?: unknown }
+) {
+  Sentry.withScope((scope) => {
+    scope.setTag("area", context.area);
+    scope.setLevel("warning");
+    if (context.cause instanceof Error) {
+      scope.setExtra("cause", context.cause.message);
+    }
+    Sentry.captureMessage(message);
+  });
+}
+
 export { Sentry };

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PatientRecord, UploadedAsset } from "@/data/contracts";
 import { buildWaveBars } from "@/data/demo/cortex";
 import { ArrowRight, CheckIcon } from "../components/icons";
+import { Button } from "@/client/components/ui/button";
 
 type IntakeScreenProps = {
   patient: PatientRecord;
@@ -74,53 +75,85 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
   }
 
   return (
-    <div className="sa" style={{ flex: 1, overflowY: "auto", padding: "28px 32px 40px" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-        <div style={{ marginBottom: 22 }}>
+    <div className="sa" style={{ flex: 1, overflowY: "auto", padding: "32px 36px 44px" }}>
+      <div style={{ maxWidth: 1140, margin: "0 auto" }}>
+        <div style={{ marginBottom: "var(--space-6)" }}>
           <div
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              letterSpacing: ".1em",
-              color: "#93A0B0",
-              textTransform: "uppercase",
-              marginBottom: 7,
-            }}
+            className="font-mono uppercase"
+            style={{ fontSize: "var(--text-xs)", letterSpacing: "var(--tracking-mono-wide)", color: "var(--cortex-fg-ghost)", marginBottom: "var(--space-2)" }}
           >
             New session
           </div>
-          <h1 style={{ margin: 0, fontSize: 25, fontWeight: 700, letterSpacing: "-.02em", color: "#101a27" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--text-3xl)", fontWeight: 700, letterSpacing: "-.02em", color: "var(--cortex-ink)" }}>
             Capture the visit
           </h1>
-          <p style={{ margin: "7px 0 0", fontSize: 13.5, color: "#647082" }}>
+          <p style={{ margin: "var(--space-2) 0 0", fontSize: "var(--text-md)", color: "var(--cortex-fg-subtle)" }}>
             Dictate or upload the session, attach structured test data, then hand it to the pipeline.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-          <div style={{ flex: 1.6, minWidth: 0, display: "flex", flexDirection: "column", gap: 18 }}>
+        <div className="flex items-start gap-5">
+          <div style={{ flex: 1.6, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
             <div
               style={{
-                background: "#fff",
-                border: "1px solid #E5E8ED",
-                borderRadius: 13,
+                background: "var(--cortex-surface)",
+                border: "1px solid var(--cortex-border)",
+                borderRadius: "var(--radius-lg)",
                 overflow: "hidden",
-                boxShadow: "0 1px 2px rgba(16,26,39,.03)",
+                boxShadow: "var(--shadow-1)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid #EEF0F3", gap: 8 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1b2735" }}>Visit capture</span>
-                <div style={{ marginLeft: "auto", display: "flex", gap: 4, background: "#F0F2F5", borderRadius: 8, padding: 3 }}>
-                  <button type="button" onClick={() => setCaptureMode("live")} style={{ border: 0, fontSize: 12, fontWeight: 600, color: captureMode === "live" ? "#fff" : "#647082", background: captureMode === "live" ? "#0E9C89" : "transparent", padding: "5px 12px", borderRadius: 6, cursor: "pointer" }}>
+              <div className="flex items-center gap-2" style={{ padding: "var(--space-4) var(--space-5)", borderBottom: "1px solid var(--cortex-border-soft)" }}>
+                <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--cortex-ink-2)" }}>Visit capture</span>
+                <div
+                  role="tablist"
+                  aria-label="Capture mode"
+                  className="flex gap-1"
+                  style={{ marginLeft: "auto", background: "var(--cortex-chip-bg)", borderRadius: "var(--radius-sm)", padding: 3 }}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={captureMode === "live"}
+                    onClick={() => setCaptureMode("live")}
+                    style={{
+                      border: 0,
+                      fontSize: "var(--text-xs)",
+                      fontWeight: 600,
+                      color: captureMode === "live" ? "#fff" : "var(--cortex-fg-subtle)",
+                      background: captureMode === "live" ? "var(--cortex-teal)" : "transparent",
+                      padding: "5px 12px",
+                      borderRadius: "var(--radius-xs)",
+                      cursor: "pointer",
+                    }}
+                  >
                     Live dictation
                   </button>
-                  <button type="button" onClick={() => { setCaptureMode("upload"); fileInput.current?.click(); }} style={{ border: 0, fontSize: 12, fontWeight: 600, color: captureMode === "upload" ? "#fff" : "#647082", background: captureMode === "upload" ? "#0E9C89" : "transparent", padding: "5px 12px", borderRadius: 6, cursor: "pointer" }}>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={captureMode === "upload"}
+                    onClick={() => {
+                      setCaptureMode("upload");
+                      fileInput.current?.click();
+                    }}
+                    style={{
+                      border: 0,
+                      fontSize: "var(--text-xs)",
+                      fontWeight: 600,
+                      color: captureMode === "upload" ? "#fff" : "var(--cortex-fg-subtle)",
+                      background: captureMode === "upload" ? "var(--cortex-teal)" : "transparent",
+                      padding: "5px 12px",
+                      borderRadius: "var(--radius-xs)",
+                      cursor: "pointer",
+                    }}
+                  >
                     Upload
                   </button>
                 </div>
               </div>
-              <div style={{ padding: "20px 18px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ padding: "var(--space-5) var(--space-5)" }}>
+                <div className="flex items-center gap-4">
                   <button
                     type="button"
                     onClick={() => void toggleRecording()}
@@ -130,7 +163,7 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                       height: 52,
                       borderRadius: "50%",
                       border: "none",
-                      background: recording ? "#C0524A" : "#0E9C89",
+                      background: recording ? "#c0524a" : "var(--cortex-teal)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -159,29 +192,31 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                       />
                     ))}
                   </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 17, color: "#1b2735", flex: "none" }}>{String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:{String(elapsedSeconds % 60).padStart(2, "0")}</div>
+                  <div className="font-mono" style={{ fontSize: "var(--text-lg)", color: "var(--cortex-ink-2)", flex: "none" }}>
+                    {String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:{String(elapsedSeconds % 60).padStart(2, "0")}
+                  </div>
                 </div>
                 <div
+                  className="font-serif"
                   style={{
-                    marginTop: 18,
-                    background: "#FBFCFD",
-                    border: "1px solid #EEF0F3",
-                    borderRadius: 10,
-                    padding: "14px 16px",
-                    fontSize: 13,
+                    marginTop: "var(--space-5)",
+                    background: "var(--cortex-surface-muted)",
+                    border: "1px solid var(--cortex-border-soft)",
+                    borderRadius: "var(--radius-md)",
+                    padding: "var(--space-4) var(--space-4)",
+                    fontSize: "var(--text-sm)",
                     lineHeight: 1.7,
-                    color: "#3a4654",
-                    fontFamily: "var(--font-serif)",
+                    color: "var(--cortex-ink-4)",
                   }}
                 >
                   <span
+                    className="font-mono"
                     style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                      letterSpacing: ".07em",
-                      color: "#93A0B0",
+                      fontSize: "var(--text-xs)",
+                      letterSpacing: "var(--tracking-mono-wide)",
+                      color: "var(--cortex-fg-ghost)",
                       display: "block",
-                      marginBottom: 8,
+                      marginBottom: "var(--space-2)",
                     }}
                   >
                     {recording ? "LIVE TRANSCRIPT · WERNICKE LISTENING" : "DICTATION PAUSED"}
@@ -192,7 +227,7 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                       display: "inline-block",
                       width: 2,
                       height: 14,
-                      background: "#0E9C89",
+                      background: "var(--cortex-teal)",
                       marginLeft: 2,
                       verticalAlign: -2,
                       animation: "blink 1s step-end infinite",
@@ -205,32 +240,40 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
 
             <div
               style={{
-                background: "#fff",
-                border: "1px solid #E5E8ED",
-                borderRadius: 13,
+                background: "var(--cortex-surface)",
+                border: "1px solid var(--cortex-border)",
+                borderRadius: "var(--radius-lg)",
                 overflow: "hidden",
-                boxShadow: "0 1px 2px rgba(16,26,39,.03)",
+                boxShadow: "var(--shadow-1)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid #EEF0F3" }}>
-                <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1b2735" }}>Structured test data</span>
-                <span style={{ marginLeft: 8, fontSize: 11, color: "#0B7E70", background: "#E3F4F0", padding: "2px 8px", borderRadius: 20, fontWeight: 600 }}>
+              <div className="flex items-center" style={{ padding: "var(--space-4) var(--space-5)", borderBottom: "1px solid var(--cortex-border-soft)" }}>
+                <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--cortex-ink-2)" }}>Structured test data</span>
+                <span
+                  style={{
+                    marginLeft: 8,
+                    fontSize: "var(--text-xs)",
+                    color: "var(--cortex-teal-dark)",
+                    background: "var(--cortex-teal-tint)",
+                    padding: "2px 8px",
+                    borderRadius: "var(--radius-xl)",
+                    fontWeight: 600,
+                  }}
+                >
                   {TEST_FILES.length + uploads.length} files parsed
                 </span>
                 <button
                   type="button"
                   onClick={() => fileInput.current?.click()}
+                  className="flex items-center gap-1.5"
                   style={{
                     marginLeft: "auto",
-                    fontSize: 12,
+                    fontSize: "var(--text-xs)",
                     fontWeight: 600,
-                    color: "#0E9C89",
+                    color: "var(--cortex-teal)",
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
                   }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -239,7 +282,7 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                   Add battery
                 </button>
               </div>
-              <div style={{ padding: "6px 18px 14px" }}>
+              <div style={{ padding: "var(--space-2) var(--space-5) var(--space-4)" }}>
                 {[
                   ...TEST_FILES.map((file) => ({ ...file, status: "Parsed" })),
                   ...uploads.map((asset) => ({
@@ -250,37 +293,32 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                 ].map((file, i, files) => (
                   <div
                     key={file.name}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "11px 0",
-                      borderBottom: i < files.length - 1 ? "1px solid #F2F4F6" : "none",
-                    }}
+                    className="flex items-center gap-3"
+                    style={{ padding: "11px 0", borderBottom: i < files.length - 1 ? "1px solid var(--cortex-border-soft)" : "none" }}
                   >
                     <div
                       style={{
                         width: 32,
                         height: 32,
-                        borderRadius: 8,
-                        background: "#F0F2F5",
+                        borderRadius: "var(--radius-sm)",
+                        background: "var(--cortex-chip-bg)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         flex: "none",
                       }}
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#647082" strokeWidth="1.7">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-fg-subtle)" strokeWidth="1.7">
                         <path d="M7 3h7l4 4v14H7z" />
                         <path d="M14 3v4h4" />
                       </svg>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "#1b2735" }}>{file.name}</div>
-                      <div style={{ fontSize: 11, color: "#93A0B0" }}>{file.detail}</div>
+                      <div style={{ fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--cortex-ink-2)" }}>{file.name}</div>
+                      <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-ghost)" }}>{file.detail}</div>
                     </div>
-                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: "#0B7E70" }}>
-                      <CheckIcon color="#0B7E70" size={13} />
+                    <span className="flex items-center gap-1.5" style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--cortex-teal-dark)" }}>
+                      <CheckIcon color="var(--cortex-teal-dark)" size={13} />
                       {file.status}
                     </span>
                   </div>
@@ -296,16 +334,16 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                     void selectFiles(event.dataTransfer.files);
                   }}
                   style={{
-                    marginTop: 8,
-                    border: "1.5px dashed #D5DAE1",
-                    borderRadius: 10,
-                    padding: 16,
+                    marginTop: "var(--space-2)",
+                    border: "1.5px dashed var(--cortex-border-stronger)",
+                    borderRadius: "var(--radius-md)",
+                    padding: "var(--space-4)",
                     textAlign: "center",
-                    color: "#93A0B0",
+                    color: "var(--cortex-fg-ghost)",
                   }}
                 >
-                  <div style={{ fontSize: 12, fontWeight: 500, color: "#647082" }}>Drop additional score sheets</div>
-                  <div style={{ fontSize: 11, marginTop: 2 }}>CSV, PDF, or XLSX · validate files contain no unnecessary identifiers</div>
+                  <div style={{ fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--cortex-fg-subtle)" }}>Drop additional score sheets</div>
+                  <div style={{ fontSize: "var(--text-xs)", marginTop: 2 }}>CSV, PDF, or XLSX · validate files contain no unnecessary identifiers</div>
                 </div>
                 <input
                   ref={fileInput}
@@ -319,20 +357,20 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
             </div>
           </div>
 
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
             <div
               style={{
-                background: "#fff",
-                border: "1px solid #E5E8ED",
-                borderRadius: 13,
+                background: "var(--cortex-surface)",
+                border: "1px solid var(--cortex-border)",
+                borderRadius: "var(--radius-lg)",
                 overflow: "hidden",
-                boxShadow: "0 1px 2px rgba(16,26,39,.03)",
+                boxShadow: "var(--shadow-1)",
               }}
             >
-              <div style={{ padding: "14px 18px", borderBottom: "1px solid #EEF0F3", fontSize: 13.5, fontWeight: 600, color: "#1b2735" }}>
+              <div style={{ padding: "var(--space-4) var(--space-5)", borderBottom: "1px solid var(--cortex-border-soft)", fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--cortex-ink-2)" }}>
                 Patient context
               </div>
-              <div style={{ padding: "6px 18px 16px" }}>
+              <div style={{ padding: "var(--space-2) var(--space-5) var(--space-4)" }}>
                 {[
                   ["Name", patient.demographics.name],
                   ["Sex", patient.demographics.sex],
@@ -340,46 +378,36 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                   ["Education", patient.demographics.education],
                   ["MRN", patient.mrn],
                 ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "10px 0",
-                      borderBottom: "1px solid #F2F4F6",
-                    }}
-                  >
-                    <span style={{ fontSize: 12.5, color: "#8A95A3" }}>{label}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 500, color: "#1b2735" }}>{value}</span>
+                  <div key={label} className="flex justify-between" style={{ padding: "10px 0", borderBottom: "1px solid var(--cortex-border-soft)" }}>
+                    <span style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-faint)" }}>{label}</span>
+                    <span style={{ fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--cortex-ink-2)" }}>{value}</span>
                   </div>
                 ))}
                 <div style={{ padding: "10px 0" }}>
-                  <span style={{ fontSize: 12.5, color: "#8A95A3", display: "block", marginBottom: 4 }}>Presenting concern</span>
-                  <span style={{ fontSize: 12.5, color: "#3a4654", lineHeight: 1.5 }}>
-                    {patient.demographics.referralReason}
-                  </span>
+                  <span style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-faint)", display: "block", marginBottom: 4 }}>Presenting concern</span>
+                  <span style={{ fontSize: "var(--text-sm)", color: "var(--cortex-ink-4)", lineHeight: 1.5 }}>{patient.demographics.referralReason}</span>
                 </div>
               </div>
             </div>
 
             <div
               style={{
-                background: "#fff",
-                border: "1px solid #E5E8ED",
-                borderRadius: 13,
-                padding: "16px 18px",
-                boxShadow: "0 1px 2px rgba(16,26,39,.03)",
+                background: "var(--cortex-surface)",
+                border: "1px solid var(--cortex-border)",
+                borderRadius: "var(--radius-lg)",
+                padding: "var(--space-5) var(--space-5)",
+                boxShadow: "var(--shadow-1)",
               }}
             >
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: "#1b2735", marginBottom: 12 }}>Ready to generate</div>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--cortex-ink-2)", marginBottom: "var(--space-3)" }}>Ready to generate</div>
               {["Transcript captured", "Test data parsed (11 measures)", "Consent on file"].map((item) => (
-                <div key={item} style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 9 }}>
+                <div key={item} className="flex items-center gap-2.5" style={{ marginBottom: "var(--space-2)" }}>
                   <span
                     style={{
                       width: 18,
                       height: 18,
                       borderRadius: "50%",
-                      background: "#0E9C89",
+                      background: "var(--cortex-teal)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -388,54 +416,28 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                   >
                     <CheckIcon color="#fff" size={11} />
                   </span>
-                  <span style={{ fontSize: 12.5, color: "#3a4654" }}>{item}</span>
+                  <span style={{ fontSize: "var(--text-sm)", color: "var(--cortex-ink-4)" }}>{item}</span>
                 </div>
               ))}
-              <button
+              <Button
                 type="button"
+                variant="cortex-primary"
                 onClick={() => void onGenerate()}
                 disabled={busy}
-                className="cortex-teal-btn"
-                style={{
-                  width: "100%",
-                  height: 44,
-                  marginTop: 7,
-                  borderRadius: 10,
-                  border: "none",
-                  background: "#0E9C89",
-                  color: "#fff",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  boxShadow: "0 2px 8px rgba(11,126,112,.25)",
-                }}
+                style={{ width: "100%", height: 44, marginTop: "var(--space-1)" }}
               >
                 {busy ? "Starting pipeline…" : "Generate report"}
                 <ArrowRight size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="cortex-secondary"
                 onClick={() => void onSaveDraft()}
                 disabled={busy}
-                style={{
-                  width: "100%",
-                  height: 38,
-                  marginTop: 9,
-                  borderRadius: 10,
-                  border: "1px solid #DCE0E7",
-                  background: "#fff",
-                  color: "#647082",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                style={{ width: "100%", height: 38, marginTop: "var(--space-3)" }}
               >
                 Save draft
-              </button>
+              </Button>
             </div>
           </div>
         </div>

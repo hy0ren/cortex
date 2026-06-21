@@ -6,4 +6,4 @@ export {
   recordGeneration,
   withAgentSpan,
 } from "./arize";
-export { captureAgentError, initSentryServer, Sentry } from "./sentry";
+export { captureAgentError, captureDegradedFallback, initSentryServer, Sentry } from "./sentry";

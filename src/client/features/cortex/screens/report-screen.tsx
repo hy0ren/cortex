@@ -4,28 +4,69 @@ import type { GliaFlag } from "../model/types";
 import type { PatientRecord, ReportDraft } from "@/data/contracts";
 import { flagStyle } from "@/data/demo/cortex";
 import { CheckIcon } from "../components/icons";
+import { Button } from "@/client/components/ui/button";
+import { Badge } from "@/client/components/ui/badge";
 
 type ReportScreenProps = {
   flags: GliaFlag[];
   draft: ReportDraft;
   patient: PatientRecord;
   busy: boolean;
-  onResolveFlag: (id: string) => void;
+  onResolveFlag: (id: string, resolution: "confirmed" | "dismissed") => void;
   onOpenExplain: () => void;
   onFinalize: () => Promise<void>;
 };
 
-function classificationStyle(classification: string, warn?: boolean, alert?: boolean) {
-  if (alert) return { color: "#A85B2A", bg: "#F9EADD" };
-  if (warn) return { color: "#8A6D2E", bg: "#F7F0DF" };
-  return { color: "#51607A", bg: "#EEF1F6" };
+function classificationStyle(warn?: boolean, alert?: boolean) {
+  if (alert) return { color: "var(--cortex-alert)", bg: "var(--cortex-alert-bg)" };
+  if (warn) return { color: "var(--cortex-warn)", bg: "var(--cortex-warn-bg)" };
+  return { color: "#51607a", bg: "#eef1f6" };
+}
+
+function FlagMarkers({ flags }: { flags: GliaFlag[] }) {
+  if (flags.length === 0) return null;
+  return (
+    <span style={{ display: "inline-flex", gap: 4, marginLeft: 8, verticalAlign: "super" }}>
+      {flags.map((f, i) => {
+        const style = flagStyle(f.severity);
+        return (
+          <a
+            key={f.id}
+            id={`flag-marker-${f.id}`}
+            href={`#flag-card-${f.id}`}
+            className="cortex-flag-marker"
+            title={f.title}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              fontFamily: "var(--font-mono)",
+              fontSize: 9,
+              fontWeight: 700,
+              color: "#fff",
+              background: style.accent,
+              textDecoration: "none",
+              lineHeight: 1,
+            }}
+          >
+            {i + 1}
+          </a>
+        );
+      })}
+    </span>
+  );
 }
 
 export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpenExplain, onFinalize }: ReportScreenProps) {
   const status = draft.status;
   const age = Math.max(0, new Date().getFullYear() - new Date(patient.demographics.dateOfBirth).getFullYear());
+  const flagsBySection = (section: string) => flags.filter((f) => f.section === section);
+
   return (
-    <div className="sa" style={{ flex: 1, overflowY: "auto", background: "#EFF1F4" }}>
+    <div className="sa" style={{ flex: 1, overflowY: "auto", background: "var(--cortex-canvas)" }}>
       <div
         style={{
           position: "sticky",
@@ -33,48 +74,36 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
           zIndex: 5,
           background: "rgba(239,241,244,0.9)",
           backdropFilter: "blur(8px)",
-          borderBottom: "1px solid #E1E5EB",
-          padding: "14px 32px",
+          borderBottom: "1px solid #e1e5eb",
+          padding: "var(--space-4) var(--space-7)",
           display: "flex",
           alignItems: "center",
-          gap: 14,
+          gap: "var(--space-4)",
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#101a27", letterSpacing: "-.01em" }}>
+          <div className="flex items-center gap-2.5">
+            <h1 style={{ margin: 0, fontSize: "var(--text-lg)", fontWeight: 700, color: "var(--cortex-ink)", letterSpacing: "-.01em" }}>
               Neuropsychological Evaluation
             </h1>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "#8A6D2E",
-                background: "#F7F0DF",
-                border: "1px solid #EAD9B5",
-                padding: "3px 9px",
-                borderRadius: 20,
-              }}
-            >
+            <Badge variant={status === "finalized" ? "verify" : "warn"} className="rounded-full border px-2.5 py-0.5">
               {status === "finalized" ? "Final" : "Draft"}
-            </span>
+            </Badge>
           </div>
-          <div style={{ fontSize: 12, color: "#8A95A3", marginTop: 3 }}>Last edited just now · autosaved</div>
+          <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", marginTop: 3 }}>Last edited just now · autosaved</div>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="flex items-center gap-2.5" style={{ marginLeft: "auto" }}>
           <div
+            className="flex items-center gap-1.5"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              fontSize: 12,
+              fontSize: "var(--text-sm)",
               fontWeight: 600,
-              color: "#B5803A",
-              background: "#FBF3E2",
-              border: "1px solid #ECDCB6",
+              color: "var(--cortex-verify)",
+              background: "var(--cortex-verify-bg)",
+              border: "1px solid var(--cortex-verify-border)",
               height: 34,
-              padding: "0 12px",
-              borderRadius: 8,
+              padding: "0 var(--space-3)",
+              borderRadius: "var(--radius-md)",
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -82,64 +111,36 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
             </svg>
             Glia: {flags.length} to review
           </div>
-          <button
-            type="button"
-            onClick={onOpenExplain}
-            className="cortex-teal-outline"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              height: 34,
-              padding: "0 13px",
-              borderRadius: 8,
-              border: "1px solid #DCE0E7",
-              background: "#fff",
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: "#0B7E70",
-              cursor: "pointer",
-            }}
-          >
+          <Button type="button" variant="cortex-secondary" size="default" onClick={onOpenExplain}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 5 6 9H2v6h4l5 4z" />
               <path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14" />
             </svg>
             Explain to patient
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="cortex-primary"
+            size="default"
             onClick={() => void onFinalize()}
             disabled={busy || status === "finalized"}
-            className="cortex-teal-btn"
-            style={{
-              height: 34,
-              padding: "0 15px",
-              borderRadius: 8,
-              border: "none",
-              background: "#0E9C89",
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: "#fff",
-              cursor: "pointer",
-            }}
           >
             {status === "finalized" ? "Finalized" : busy ? "Saving…" : "Finalize"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 26, padding: "30px 32px 60px", alignItems: "flex-start", maxWidth: 1180, margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: "var(--space-6)", padding: "var(--space-7) var(--space-7) var(--space-9)", alignItems: "flex-start", maxWidth: 1240, margin: "0 auto" }}>
         <article
           data-report-document
           style={{
             flex: 1,
             minWidth: 0,
-            background: "#fff",
-            border: "1px solid #E5E8ED",
-            borderRadius: 4,
+            background: "var(--cortex-surface)",
+            border: "1px solid var(--cortex-border)",
+            borderRadius: "var(--radius-xs)",
             boxShadow: "0 1px 3px rgba(16,26,39,.06)",
-            padding: "48px 56px 56px",
+            padding: "64px 72px 72px",
           }}
         >
           <div
@@ -147,48 +148,29 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-start",
-              paddingBottom: 22,
-              borderBottom: "2px solid #101a27",
-              marginBottom: 30,
+              paddingBottom: "var(--space-5)",
+              borderBottom: "2px solid var(--cortex-ink)",
+              marginBottom: "var(--space-7)",
             }}
           >
             <div>
               <div
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  letterSpacing: ".12em",
-                  color: "#93A0B0",
-                  textTransform: "uppercase",
-                }}
+                className="font-mono uppercase"
+                style={{ fontSize: "var(--text-xs)", letterSpacing: "var(--tracking-mono-wide)", color: "var(--cortex-fg-ghost)" }}
               >
                 Confidential · Synthetic record
               </div>
               <h2
-                style={{
-                  fontFamily: "var(--font-serif)",
-                  fontSize: 27,
-                  fontWeight: 700,
-                  color: "#101a27",
-                  margin: "9px 0 4px",
-                  letterSpacing: "-.01em",
-                }}
+                className="font-serif"
+                style={{ fontSize: "var(--text-2xl)", fontWeight: 700, color: "var(--cortex-ink)", margin: "var(--space-2) 0 4px", letterSpacing: "-.01em" }}
               >
                 Neuropsychological Evaluation
               </h2>
-              <div style={{ fontSize: 13, color: "#647082" }}>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-subtle)" }}>
                 {patient.demographics.name} · {age} years · {patient.demographics.handedness}-handed · {patient.demographics.education}
               </div>
             </div>
-            <div
-              style={{
-                textAlign: "right",
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                color: "#8A95A3",
-                lineHeight: 1.9,
-              }}
-            >
+            <div className="font-mono" style={{ textAlign: "right", fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", lineHeight: 1.9 }}>
               <div>MRN&nbsp;&nbsp;{patient.mrn}</div>
               <div>DOB&nbsp;&nbsp;{patient.demographics.dateOfBirth}</div>
               <div>DOE&nbsp;&nbsp;{new Date(draft.updatedAt).toLocaleDateString()}</div>
@@ -197,81 +179,64 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
           </div>
 
           {[
-            {
-              title: "Reason for Referral",
-              body: draft.sections.reasonForReferral,
-            },
-            {
-              title: "History of Presenting Concern",
-              body: draft.sections.history,
-            },
-            {
-              title: "Behavioral Observations",
-              body: draft.sections.behavioralObservations,
-            },
+            { key: "Reason for Referral", title: "Reason for Referral", body: draft.sections.reasonForReferral },
+            { key: "History", title: "History of Presenting Concern", body: draft.sections.history },
+            { key: "Behavioral Observations", title: "Behavioral Observations", body: draft.sections.behavioralObservations },
           ].map((section) => (
-            <section key={section.title} style={{ marginBottom: 26 }}>
+            <section key={section.key} style={{ marginBottom: "var(--space-7)" }}>
               <h3
-                style={{
-                  fontFamily: "var(--font-serif)",
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: "#0B7E70",
-                  margin: "0 0 9px",
-                  letterSpacing: "-.005em",
-                }}
+                className="font-serif"
+                style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}
               >
                 {section.title}
               </h3>
-              <p style={{ fontFamily: "var(--font-serif)", fontSize: 14.5, lineHeight: 1.74, color: "#2b3542", margin: 0 }}>
+              <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", margin: 0 }}>
                 {section.body}
+                <FlagMarkers flags={flagsBySection(section.key)} />
               </p>
             </section>
           ))}
 
-          <section style={{ marginBottom: 26 }}>
-            <h3 style={{ fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 600, color: "#0B7E70", margin: "0 0 11px", letterSpacing: "-.005em" }}>
+          <section style={{ marginBottom: "var(--space-7)" }}>
+            <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-4)", letterSpacing: "-.005em" }}>
               Tests Administered
             </h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-              {[...new Set(patient.testBattery.map((score) => score.test))].map(
-                (test) => (
-                  <span
-                    key={test}
-                    style={{
-                      fontSize: 12,
-                      color: "#3a4654",
-                      background: "#F4F6F8",
-                      border: "1px solid #E5E8ED",
-                      padding: "5px 10px",
-                      borderRadius: 6,
-                    }}
-                  >
-                    {test}
-                  </span>
-                )
-              )}
+            <div className="flex flex-wrap gap-[7px]">
+              {[...new Set(patient.testBattery.map((score) => score.test))].map((test) => (
+                <span
+                  key={test}
+                  style={{
+                    fontSize: "var(--text-xs)",
+                    color: "var(--cortex-ink-4)",
+                    background: "#f4f6f8",
+                    border: "1px solid var(--cortex-border)",
+                    padding: "5px 10px",
+                    borderRadius: "var(--radius-sm)",
+                  }}
+                >
+                  {test}
+                </span>
+              ))}
             </div>
           </section>
 
-          <section style={{ marginBottom: 26 }}>
-            <h3 style={{ fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 600, color: "#0B7E70", margin: "0 0 12px", letterSpacing: "-.005em" }}>
+          <section id="section-test-results" style={{ marginBottom: "var(--space-7)" }}>
+            <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-4)", letterSpacing: "-.005em" }}>
               Test Results
             </h3>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--text-sm)" }}>
               <thead>
-                <tr style={{ borderBottom: "1.5px solid #D5DAE1" }}>
+                <tr style={{ borderBottom: "1.5px solid var(--cortex-border-stronger)" }}>
                   {["Measure", "Std. Score", "%ile", "Classification"].map((h, i) => (
                     <th
                       key={h}
+                      className="font-mono uppercase"
                       style={{
                         textAlign: i === 0 ? "left" : i === 3 ? "left" : "right",
                         padding: i === 0 ? "8px 10px 8px 0" : i === 3 ? "8px 0 8px 14px" : "8px 14px",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 10,
-                        letterSpacing: ".06em",
-                        textTransform: "uppercase",
-                        color: "#93A0B0",
+                        fontSize: "var(--text-xs)",
+                        letterSpacing: "var(--tracking-mono-tight)",
+                        color: "var(--cortex-fg-ghost)",
                         fontWeight: 500,
                       }}
                     >
@@ -284,48 +249,37 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
                 {patient.testBattery.map((row) => {
                   const alert = /borderline|impaired/i.test(row.classification);
                   const warn = /low average/i.test(row.classification);
-                  const cls = classificationStyle(row.classification, warn, alert);
+                  const cls = classificationStyle(warn, alert);
                   return (
                     <tr
                       key={`${row.test}-${row.subtest ?? ""}`}
-                      style={{
-                        borderBottom: "1px solid #EEF0F3",
-                        background: alert ? "#FCF7EF" : undefined,
-                      }}
+                      style={{ borderBottom: "1px solid var(--cortex-border-soft)", background: alert ? "#fcf7ef" : undefined }}
                     >
-                      <td style={{ padding: "9px 10px 9px 0", color: "#1b2735", fontWeight: alert ? 600 : 500 }}>
-                        {row.test}{row.subtest ? ` — ${row.subtest}` : ""}
+                      <td style={{ padding: "9px 10px 9px 0", color: "var(--cortex-ink-2)", fontWeight: alert ? 600 : 500 }}>
+                        {row.test}
+                        {row.subtest ? ` — ${row.subtest}` : ""}
                       </td>
                       <td
-                        style={{
-                          textAlign: "right",
-                          padding: "9px 14px",
-                          fontFamily: "var(--font-mono)",
-                          color: alert ? "#A85B2A" : "#1b2735",
-                          fontWeight: alert ? 500 : undefined,
-                        }}
+                        className="font-mono"
+                        style={{ textAlign: "right", padding: "9px 14px", color: alert ? "var(--cortex-alert)" : "var(--cortex-ink-2)", fontWeight: alert ? 500 : undefined }}
                       >
                         {row.standardScore}
+                        {(warn || alert) && (
+                          <span style={{ fontSize: 9, color: "var(--cortex-fg-ghost)", marginLeft: 3 }}>±SEM</span>
+                        )}
                       </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          padding: "9px 14px",
-                          fontFamily: "var(--font-mono)",
-                          color: alert ? "#A85B2A" : "#647082",
-                        }}
-                      >
+                      <td className="font-mono" style={{ textAlign: "right", padding: "9px 14px", color: alert ? "var(--cortex-alert)" : "var(--cortex-fg-subtle)" }}>
                         {row.percentile}
                       </td>
                       <td style={{ padding: "9px 0 9px 14px" }}>
                         <span
                           style={{
-                            fontSize: 11.5,
+                            fontSize: "var(--text-xs)",
                             fontWeight: 600,
                             color: cls.color,
                             background: cls.bg,
                             padding: "3px 8px",
-                            borderRadius: 5,
+                            borderRadius: "var(--radius-xs)",
                           }}
                         >
                           {row.classification}
@@ -336,28 +290,31 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
                 })}
               </tbody>
             </table>
-            <div style={{ fontSize: 11, color: "#93A0B0", marginTop: 10, fontStyle: "italic" }}>
-              Standard scores: M = 100, SD = 15, age‑corrected. Classification per Heaton conventions. SEM applied; bands indicate confidence, not point certainty.
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-ghost)", marginTop: "var(--space-3)", fontStyle: "italic" }}>
+              Standard scores: M = 100, SD = 15, age‑corrected. Classification per Heaton conventions. SEM applied; bands indicate confidence, not point
+              certainty.
             </div>
           </section>
 
-          <section style={{ marginBottom: 26 }}>
-            <h3 style={{ fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 600, color: "#0B7E70", margin: "0 0 9px", letterSpacing: "-.005em" }}>
+          <section style={{ marginBottom: "var(--space-7)" }}>
+            <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}>
               Interpretation
             </h3>
-            <p style={{ fontFamily: "var(--font-serif)", fontSize: 14.5, lineHeight: 1.74, color: "#2b3542", margin: 0 }}>
+            <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", margin: 0 }}>
               {draft.sections.interpretation}
+              <FlagMarkers flags={flagsBySection("Interpretation")} />
             </p>
           </section>
 
           <section>
-            <h3 style={{ fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 600, color: "#0B7E70", margin: "0 0 9px", letterSpacing: "-.005em" }}>
+            <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}>
               Summary & Recommendations
             </h3>
-            <p style={{ fontFamily: "var(--font-serif)", fontSize: 14.5, lineHeight: 1.74, color: "#2b3542", margin: "0 0 12px" }}>
+            <p className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", margin: "0 0 var(--space-3)" }}>
               {draft.sections.summary}
+              <FlagMarkers flags={flagsBySection("Summary")} />
             </p>
-            <ol style={{ fontFamily: "var(--font-serif)", fontSize: 14.5, lineHeight: 1.7, color: "#2b3542", margin: 0, paddingLeft: 20 }}>
+            <ol className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: 0, paddingLeft: 20 }}>
               {[
                 "Neurology follow‑up with consideration of structural MRI and biomarker assessment.",
                 "Repeat neuropsychological evaluation in 12 months to establish trajectory.",
@@ -373,99 +330,119 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
           </section>
         </article>
 
-        <aside style={{ width: 312, flex: "none", position: "sticky", top: 88, display: "flex", flexDirection: "column", gap: 14 }}>
+        <aside style={{ width: 312, flex: "none", position: "sticky", top: 88, display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <div
             style={{
-              background: "#fff",
-              border: "1px solid #E5E8ED",
-              borderRadius: 12,
+              background: "var(--cortex-surface)",
+              border: "1px solid var(--cortex-border)",
+              borderRadius: "var(--radius-md)",
               overflow: "hidden",
               boxShadow: "0 1px 3px rgba(16,26,39,.05)",
             }}
           >
-            <div style={{ padding: "15px 17px", borderBottom: "1px solid #EEF0F3", display: "flex", alignItems: "center", gap: 9 }}>
+            <div className="flex items-center gap-2.5" style={{ padding: "15px var(--space-4)", borderBottom: "1px solid var(--cortex-border-soft)" }}>
               <div
                 style={{
                   width: 26,
                   height: 26,
-                  borderRadius: 7,
-                  background: "#EAF0FB",
+                  borderRadius: "var(--radius-sm)",
+                  background: "var(--cortex-blue-tint-soft)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2F5BD0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 12l2 2 4-4" />
                   <path d="M12 3 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z" />
                 </svg>
               </div>
               <div style={{ lineHeight: 1.3 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1b2735" }}>Glia · Quality assurance</div>
-                <div style={{ fontSize: 11, color: "#8A95A3", marginTop: 2 }}>Human‑in‑the‑loop review</div>
+                <div style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--cortex-ink-2)" }}>Glia · Quality assurance</div>
+                <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", marginTop: 2 }}>Human‑in‑the‑loop review</div>
               </div>
             </div>
-            <div style={{ padding: "12px 17px", borderBottom: "1px solid #EEF0F3", display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#56616F" }}>
-                <CheckIcon color="#0E9C89" />
+            <div className="flex flex-col gap-2" style={{ padding: "var(--space-3) var(--space-4)", borderBottom: "1px solid var(--cortex-border-soft)" }}>
+              <div className="flex items-center gap-2" style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-muted)" }}>
+                <CheckIcon color="var(--cortex-teal)" />
                 Normative alignment verified
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#56616F" }}>
-                <CheckIcon color="#0E9C89" />
+              <div className="flex items-center gap-2" style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-muted)" }}>
+                <CheckIcon color="var(--cortex-teal)" />
                 All required sections present
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#56616F" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B5803A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex items-center gap-2" style={{ fontSize: "var(--text-sm)", color: "var(--cortex-fg-muted)" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cortex-verify)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
                 </svg>
-                <span style={{ fontWeight: 600, color: "#3a4654" }}>{flags.length} items need your judgement</span>
+                <span style={{ fontWeight: 600, color: "var(--cortex-ink-4)" }}>{flags.length} items need your judgement</span>
               </div>
             </div>
 
-            <div style={{ padding: "13px 14px", display: "flex", flexDirection: "column", gap: 11 }}>
-              {flags.map((f) => {
+            <div className="flex flex-col gap-[11px]" style={{ padding: "13px 14px" }}>
+              {flags.map((f, i) => {
                 const style = flagStyle(f.severity);
                 return (
                   <div
                     key={f.id}
+                    id={`flag-card-${f.id}`}
+                    className="cortex-flag-card"
                     style={{
                       border: `1px solid ${style.bord}`,
                       background: style.soft,
-                      borderRadius: 10,
-                      padding: "12px 13px",
+                      borderRadius: "var(--radius-md)",
+                      padding: "var(--space-3)",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 7 }}>
+                    <div className="flex items-center gap-1.5" style={{ marginBottom: 7 }}>
                       <span
+                        className="font-mono"
                         style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: 10,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 16,
+                          height: 16,
+                          borderRadius: "50%",
+                          fontSize: 9,
+                          fontWeight: 700,
+                          color: "#fff",
+                          background: style.accent,
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span
+                        className="font-mono"
+                        style={{
+                          fontSize: "var(--text-xs)",
                           fontWeight: 500,
                           color: style.accent,
                           border: `1px solid ${style.bord}`,
                           padding: "2px 6px",
-                          borderRadius: 5,
-                          background: "#fff",
+                          borderRadius: "var(--radius-xs)",
+                          background: "var(--cortex-surface)",
                         }}
                       >
                         {style.label}
                       </span>
-                      <span style={{ fontSize: 10.5, color: "#8A95A3" }}>{f.section}</span>
+                      <span style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)" }}>{f.section}</span>
                     </div>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "#1b2735", marginBottom: 4 }}>{f.title}</div>
-                    <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "#56616F" }}>{f.detail}</div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 11 }}>
+                    <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--cortex-ink-2)", marginBottom: 4 }}>{f.title}</div>
+                    <div style={{ fontSize: "var(--text-xs)", lineHeight: 1.5, color: "var(--cortex-fg-muted)" }}>{f.detail}</div>
+                    <div className="flex gap-2" style={{ marginTop: "var(--space-3)" }}>
                       <button
                         type="button"
-                        onClick={() => onResolveFlag(f.id)}
+                        onClick={() => onResolveFlag(f.id, "confirmed")}
+                        title="Confirm this flag is accurate and mark it reviewed"
                         style={{
                           flex: 1,
                           height: 30,
-                          borderRadius: 7,
+                          borderRadius: "var(--radius-sm)",
                           border: "none",
                           background: style.accent,
                           color: "#fff",
-                          fontSize: 11.5,
+                          fontSize: "var(--text-xs)",
                           fontWeight: 600,
                           cursor: "pointer",
                         }}
@@ -474,15 +451,16 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
                       </button>
                       <button
                         type="button"
-                        onClick={() => onResolveFlag(f.id)}
+                        onClick={() => onResolveFlag(f.id, "dismissed")}
+                        title="Dismiss this flag as not applicable, without confirming it"
                         style={{
                           flex: 1,
                           height: 30,
-                          borderRadius: 7,
-                          border: "1px solid #DCE0E7",
-                          background: "#fff",
-                          color: "#647082",
-                          fontSize: 11.5,
+                          borderRadius: "var(--radius-sm)",
+                          border: "1px solid var(--cortex-border-strong)",
+                          background: "var(--cortex-surface)",
+                          color: "var(--cortex-fg-subtle)",
+                          fontSize: "var(--text-xs)",
                           fontWeight: 600,
                           cursor: "pointer",
                         }}
@@ -494,23 +472,23 @@ export function ReportScreen({ flags, draft, patient, busy, onResolveFlag, onOpe
                 );
               })}
               {flags.length === 0 && (
-                <div style={{ textAlign: "center", padding: "26px 12px" }}>
+                <div style={{ textAlign: "center", padding: "32px 12px" }}>
                   <div
                     style={{
-                      width: 42,
-                      height: 42,
+                      width: 48,
+                      height: 48,
                       borderRadius: "50%",
-                      background: "#E3F4F0",
+                      background: "var(--cortex-teal-tint)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      margin: "0 auto 12px",
+                      margin: "0 auto var(--space-3)",
                     }}
                   >
-                    <CheckIcon color="#0E9C89" size={22} />
+                    <CheckIcon color="var(--cortex-teal)" size={24} />
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1b2735" }}>All clear</div>
-                  <div style={{ fontSize: 11.5, color: "#8A95A3", marginTop: 3 }}>
+                  <div style={{ fontSize: "var(--text-md)", fontWeight: 600, color: "var(--cortex-ink-2)" }}>All clear</div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", marginTop: 4 }}>
                     No outstanding flags. Glia found nothing else to verify.
                   </div>
                 </div>

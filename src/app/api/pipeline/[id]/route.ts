@@ -20,7 +20,7 @@ export async function GET(
     }
     return ok({ run });
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "pipeline.get" });
   }
 }
 
@@ -44,6 +44,6 @@ export async function PATCH(
     if (body.action === "resume") return ok({ run: setPipelinePhase(id, "running") });
     return fail("INVALID_REQUEST", "Unsupported pipeline action");
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "pipeline.patch" });
   }
 }

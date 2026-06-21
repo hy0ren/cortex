@@ -25,6 +25,7 @@ export function CortexApp({ session, onSignOut }: CortexAppProps) {
       <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#F5F6F8" }}>
         <TopBar
           listening={workspace.listening}
+          voiceSupported={workspace.voiceSupported}
           onToggleListen={workspace.toggleListening}
           onExport={workspace.exportReport}
           onSignOut={onSignOut}

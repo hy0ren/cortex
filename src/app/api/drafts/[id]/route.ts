@@ -21,7 +21,7 @@ export async function GET(
     }
     return ok({ draft });
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "drafts.get" });
   }
 }
 
@@ -40,11 +40,12 @@ export async function PATCH(
     const body = await request.json() as {
       status?: "idle" | "generating" | "review" | "finalized";
       flagId?: string;
+      flagResolution?: "confirmed" | "dismissed";
       sections?: Record<string, string>;
     };
 
     if (body.flagId) {
-      return ok({ draft: await resolveDraftFlag(id, body.flagId) });
+      return ok({ draft: await resolveDraftFlag(id, body.flagId, body.flagResolution ?? "dismissed") });
     }
     if (body.status) {
       return ok({ draft: await updateDraftStatus(id, body.status) });
@@ -54,6 +55,6 @@ export async function PATCH(
     }
     return fail("INVALID_REQUEST", "No supported draft update supplied");
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "drafts.patch" });
   }
 }

@@ -1,59 +1,91 @@
 import "server-only";
 import { randomUUID } from "crypto";
-import type { AgentStatus, PipelineRun, ReportDraft } from "@/data/contracts";
+import type { AgentStatus, GliaFlag, PipelineRun } from "@/data/contracts";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { getMemoryStore } from "@/server/persistence/memory-store";
 import { findPatient } from "@/server/persistence/patient-repository";
 import { getReportDraft } from "@/server/persistence/drafts";
 import { saveDraft } from "@/server/reports/report-service";
 import { completeWithClaude } from "@/server/ai/anthropic";
-import { BROCA_SYSTEM_PROMPT, buildBrocaUserMessage } from "@/server/ai/agents/broca";
+import {
+  BROCA_SYSTEM_PROMPT,
+  buildBrocaUserMessage,
+  type BrocaOutput,
+  GLIA_SYSTEM_PROMPT,
+  buildGliaUserMessage,
+  type GliaOutput,
+  NORM_SYSTEM_PROMPT,
+  buildNormUserMessage,
+  type NormOutput,
+  WERNICKE_SYSTEM_PROMPT,
+  buildWernickeUserMessage,
+  type WernickeOutput,
+} from "@/server/ai/agents";
 import {
   recordGeneration,
   withAgentSpan,
 } from "@/server/observability/arize";
+import { captureAgentError } from "@/server/observability/sentry";
 import { searchPatientHistory } from "@/server/persistence/redis";
+import type { PatientRecord } from "@/data/contracts";
 
 const AGENT_SEQUENCE = ["wernicke", "norm", "engram", "broca", "glia"] as const;
 
-function applyBrocaOutput(
-  current: Record<string, string>,
-  output: string
-): Record<string, string> {
+/** Broca's canonical section keys, mapped to the report screen's display section keys (used to anchor Glia flags). */
+const SECTION_KEY_MAP: Record<string, string> = {
+  "REASON FOR REFERRAL": "Reason for Referral",
+  "BACKGROUND AND HISTORY": "History",
+  "BEHAVIORAL OBSERVATIONS": "Behavioral Observations",
+  "TEST RESULTS AND INTERPRETATION": "Interpretation",
+  "SUMMARY AND IMPRESSIONS": "Summary",
+  RECOMMENDATIONS: "Summary",
+};
+
+function mapToReportSectionKey(section: string): string {
+  const exact = SECTION_KEY_MAP[section.toUpperCase()];
+  if (exact) return exact;
+  const match = Object.entries(SECTION_KEY_MAP).find(([key]) =>
+    section.toUpperCase().includes(key) || key.includes(section.toUpperCase())
+  );
+  return match?.[1] ?? section;
+}
+
+function parseAgentJson<T>(raw: string): T | null {
   try {
-    const normalized = output
+    const normalized = raw
       .replace(/^```(?:json)?\s*/i, "")
       .replace(/\s*```$/, "");
-    const parsed = JSON.parse(normalized) as {
-      sections?: Record<string, string>;
-      draftNotes?: string[];
-    };
-    const sections = parsed.sections;
-    if (!sections) return { ...current, generatedDraft: output };
-
-    const summary = sections["SUMMARY AND IMPRESSIONS"];
-    const recommendations = sections.RECOMMENDATIONS;
-    return {
-      ...current,
-      ...(sections["REASON FOR REFERRAL"] && {
-        reasonForReferral: sections["REASON FOR REFERRAL"],
-      }),
-      ...(sections["BACKGROUND AND HISTORY"] && {
-        history: sections["BACKGROUND AND HISTORY"],
-      }),
-      ...(sections["BEHAVIORAL OBSERVATIONS"] && {
-        behavioralObservations: sections["BEHAVIORAL OBSERVATIONS"],
-      }),
-      ...(sections["TEST RESULTS AND INTERPRETATION"] && {
-        interpretation: sections["TEST RESULTS AND INTERPRETATION"],
-      }),
-      ...((summary || recommendations) && {
-        summary: [summary, recommendations].filter(Boolean).join("\n\n"),
-      }),
-    };
+    return JSON.parse(normalized) as T;
   } catch {
-    return { ...current, generatedDraft: output };
+    return null;
   }
+}
+
+function applyBrocaOutput(
+  current: Record<string, string>,
+  output: BrocaOutput
+): Record<string, string> {
+  const sections = output.sections;
+  const summary = sections["SUMMARY AND IMPRESSIONS"];
+  const recommendations = sections.RECOMMENDATIONS;
+  return {
+    ...current,
+    ...(sections["REASON FOR REFERRAL"] && {
+      reasonForReferral: sections["REASON FOR REFERRAL"],
+    }),
+    ...(sections["BACKGROUND AND HISTORY"] && {
+      history: sections["BACKGROUND AND HISTORY"],
+    }),
+    ...(sections["BEHAVIORAL OBSERVATIONS"] && {
+      behavioralObservations: sections["BEHAVIORAL OBSERVATIONS"],
+    }),
+    ...(sections["TEST RESULTS AND INTERPRETATION"] && {
+      interpretation: sections["TEST RESULTS AND INTERPRETATION"],
+    }),
+    ...((summary || recommendations) && {
+      summary: [summary, recommendations].filter(Boolean).join("\n\n"),
+    }),
+  };
 }
 
 function log(agent: AgentStatus["agent"], phase: AgentStatus["phase"], message: string): AgentStatus {
@@ -94,6 +126,50 @@ export function setPipelinePhase(id: string, phase: "running" | "paused"): Pipel
   return next;
 }
 
+async function runWernicke(patient: PatientRecord): Promise<WernickeOutput | null> {
+  const output = await completeWithClaude({
+    system: WERNICKE_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: buildWernickeUserMessage({ patient }) }],
+  });
+  return parseAgentJson<WernickeOutput>(output);
+}
+
+async function runNorm(patient: PatientRecord, clinicalContext?: string): Promise<NormOutput | null> {
+  const output = await completeWithClaude({
+    system: NORM_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content: buildNormUserMessage({ patient, testBattery: patient.testBattery, clinicalContext }),
+      },
+    ],
+  });
+  return parseAgentJson<NormOutput>(output);
+}
+
+async function runGlia(input: {
+  draftSections: Record<string, string>;
+  clinicalContext: string;
+  normativeInterpretation: string;
+  sourceTranscript: string;
+}): Promise<GliaOutput | null> {
+  const output = await completeWithClaude({
+    system: GLIA_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: buildGliaUserMessage(input) }],
+  });
+  return parseAgentJson<GliaOutput>(output);
+}
+
+function gliaFlagsFromOutput(output: GliaOutput): GliaFlag[] {
+  return output.flags.map((flag, index) => ({
+    id: `glia-${Date.now()}-${index}`,
+    section: mapToReportSectionKey(flag.section),
+    severity: flag.severity === "info" ? "note" : "verify",
+    title: flag.message,
+    detail: flag.suggestion ?? flag.message,
+  }));
+}
+
 export async function advancePipeline(id: string): Promise<PipelineRun> {
   const run = getPipelineRun(id);
   if (!run) throw new Error("Pipeline run not found");
@@ -129,89 +205,122 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
         "pipeline.progress": next.progress,
         "pipeline.phase": next.phase,
       });
-      if (
-        agent === "engram" &&
-        getRuntimeCapabilities().redis === "configured"
-      ) {
-        const patient = await findPatient(next.patientId);
-        const draft = await getReportDraft(next.draftId);
-        if (patient && draft) {
-          const evidence = await searchPatientHistory(
-            `${patient.demographics.referralReason}\n${patient.visitTranscript}`,
-            5
+
+      const anthropicReady = getRuntimeCapabilities().anthropic === "configured";
+      const needsRecord = anthropicReady || agent === "engram" || agent === "glia";
+      const patient = needsRecord ? await findPatient(next.patientId) : null;
+      const draft = needsRecord ? await getReportDraft(next.draftId) : null;
+
+      if (agent === "wernicke" && anthropicReady && patient && draft) {
+        try {
+          const output = await runWernicke(patient);
+          if (output) {
+            await saveDraft({
+              ...draft,
+              agentNotes: { ...draft.agentNotes, wernicke: JSON.stringify(output) },
+            });
+            span.setAttribute("wernicke.red_flags", output.redFlags.length);
+          }
+        } catch (error) {
+          console.warn("[cortex-pipeline] Wernicke generation failed; retaining deterministic context", error);
+          captureAgentError(error, { agent: "wernicke", sessionId: next.id, patientId: next.patientId });
+        }
+      }
+
+      if (agent === "norm" && anthropicReady && patient && draft) {
+        try {
+          const wernickeNote = parseAgentJson<WernickeOutput>(draft.agentNotes.wernicke ?? "");
+          const output = await runNorm(patient, wernickeNote?.clinicalContext);
+          if (output) {
+            await saveDraft({
+              ...draft,
+              agentNotes: { ...draft.agentNotes, norm: JSON.stringify(output) },
+            });
+            span.setAttribute("norm.domains", output.domainInterpretations.length);
+          }
+        } catch (error) {
+          console.warn("[cortex-pipeline] Norm generation failed; retaining deterministic interpretation", error);
+          captureAgentError(error, { agent: "norm", sessionId: next.id, patientId: next.patientId });
+        }
+      }
+
+      if (agent === "engram" && getRuntimeCapabilities().redis === "configured" && patient && draft) {
+        const evidence = await searchPatientHistory(
+          `${patient.demographics.referralReason}\n${patient.visitTranscript}`,
+          5
+        );
+        await saveDraft({
+          ...draft,
+          agentNotes: { ...draft.agentNotes, engramEvidence: JSON.stringify(evidence) },
+        });
+        span.setAttribute("engram.result_count", evidence.length);
+      }
+
+      if (agent === "broca" && anthropicReady && patient && draft) {
+        try {
+          const wernickeNote = parseAgentJson<WernickeOutput>(draft.agentNotes.wernicke ?? "");
+          const normNote = parseAgentJson<NormOutput>(draft.agentNotes.norm ?? "");
+          const clinicalContext = wernickeNote?.clinicalContext ?? patient.visitTranscript;
+          const normativeInterpretation =
+            normNote?.overallProfile ??
+            patient.testBattery.map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`).join("\n");
+
+          const input = buildBrocaUserMessage({
+            clinicalContext,
+            normativeInterpretation,
+            patientName: patient.demographics.name,
+            referralReason: patient.demographics.referralReason,
+          });
+          const generated = await withAgentSpan(
+            "cortex.agent.broca.generate",
+            { agent: "broca", sessionId: next.id, patientId: next.patientId },
+            async () => {
+              const raw = await completeWithClaude({ system: BROCA_SYSTEM_PROMPT, messages: [{ role: "user", content: input }] });
+              recordGeneration(input, raw);
+              return raw;
+            }
           );
-          await saveDraft({
-            ...draft,
-            agentNotes: {
-              ...draft.agentNotes,
-              engramEvidence: JSON.stringify(evidence),
-            },
-          });
-          span.setAttribute("engram.result_count", evidence.length);
+          const output = parseAgentJson<BrocaOutput>(generated);
+          const sections = output ? applyBrocaOutput(draft.sections, output) : { ...draft.sections, generatedDraft: generated };
+          await saveDraft({ ...draft, sections, status: "generating" });
+        } catch (error) {
+          console.warn("[cortex-pipeline] Claude generation failed; retaining deterministic draft", error);
+          captureAgentError(error, { agent: "broca", sessionId: next.id, patientId: next.patientId });
         }
       }
-      if (complete) await completeDraft(next);
+
+      if (agent === "glia" && patient && draft) {
+        const latestDraft = (await getReportDraft(next.draftId)) ?? draft;
+        let flags: GliaFlag[] | null = null;
+        if (anthropicReady) {
+          try {
+            const wernickeNote = parseAgentJson<WernickeOutput>(latestDraft.agentNotes.wernicke ?? "");
+            const normNote = parseAgentJson<NormOutput>(latestDraft.agentNotes.norm ?? "");
+            const output = await runGlia({
+              draftSections: latestDraft.sections,
+              clinicalContext: wernickeNote?.clinicalContext ?? patient.visitTranscript,
+              normativeInterpretation: normNote?.overallProfile ?? "",
+              sourceTranscript: patient.visitTranscript,
+            });
+            if (output) {
+              flags = gliaFlagsFromOutput(output);
+              span.setAttribute("glia.completeness_score", output.completenessScore);
+              span.setAttribute("glia.consistency_score", output.consistencyScore);
+            }
+          } catch (error) {
+            console.warn("[cortex-pipeline] Glia review failed; leaving prior flags in place", error);
+            captureAgentError(error, { agent: "glia", sessionId: next.id, patientId: next.patientId });
+          }
+        }
+        if (flags) span.setAttribute("glia.unresolved_flags", flags.length);
+        await saveDraft({
+          ...latestDraft,
+          status: "review",
+          agentNotes: flags ? { ...latestDraft.agentNotes, flags: JSON.stringify(flags) } : latestDraft.agentNotes,
+        });
+      }
+
       return next;
-    }
-  );
-}
-
-async function completeDraft(run: PipelineRun) {
-  const draft = await getReportDraft(run.draftId);
-  const patient = await findPatient(run.patientId);
-  if (!draft || !patient) return;
-
-  let sections = draft.sections;
-  if (getRuntimeCapabilities().anthropic === "configured") {
-    try {
-      const input = buildBrocaUserMessage({
-          clinicalContext: patient.visitTranscript,
-          normativeInterpretation: patient.testBattery
-            .map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`)
-            .join("\n"),
-          patientName: patient.demographics.name,
-          referralReason: patient.demographics.referralReason,
-      });
-      const output = await withAgentSpan(
-        "cortex.agent.broca.generate",
-        {
-          agent: "broca",
-          sessionId: run.id,
-          patientId: run.patientId,
-        },
-        async () => {
-          const generated = await completeWithClaude({
-            system: BROCA_SYSTEM_PROMPT,
-            messages: [{ role: "user", content: input }],
-          });
-          recordGeneration(input, generated);
-          return generated;
-        }
-      );
-      sections = applyBrocaOutput(sections, output);
-    } catch (error) {
-      console.warn("[cortex-pipeline] Claude generation failed; retaining deterministic draft", error);
-    }
-  }
-
-  await withAgentSpan(
-    "cortex.agent.glia.review",
-    {
-      agent: "glia",
-      sessionId: run.id,
-      patientId: run.patientId,
-    },
-    async (span) => {
-      let unresolvedFlags = 0;
-      try {
-        const flags = JSON.parse(draft.agentNotes.flags ?? "[]") as unknown;
-        unresolvedFlags = Array.isArray(flags) ? flags.length : 0;
-      } catch {
-        unresolvedFlags = 0;
-      }
-      span.setAttribute("glia.unresolved_flags", unresolvedFlags);
-      const completed: ReportDraft = { ...draft, sections, status: "review" };
-      await saveDraft(completed);
     }
   );
 }

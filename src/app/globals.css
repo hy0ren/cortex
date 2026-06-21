@@ -4,12 +4,152 @@
   --font-sans: var(--font-hanken), -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: var(--font-source-serif), Georgia, serif;
   --font-mono: var(--font-ibm-mono), ui-monospace, monospace;
+
+  /* base palette — unchanged values, do not edit */
   --cortex-bg: #f5f6f8;
   --cortex-text: #101a27;
   --cortex-teal: #0e9c89;
   --cortex-teal-dark: #0b7e70;
   --cortex-blue: #2f5bd0;
   --cortex-nav: #0b1220;
+
+  /* surfaces */
+  --cortex-surface: #ffffff;
+  --cortex-surface-muted: #fbfcfd;
+  --cortex-canvas: #eff1f4;
+  --cortex-chip-bg: #f0f2f5;
+
+  /* borders */
+  --cortex-border: #e5e8ed;
+  --cortex-border-soft: #eef0f3;
+  --cortex-border-strong: #dce0e7;
+  --cortex-border-stronger: #d5dae1;
+
+  /* text ramp */
+  --cortex-ink: #101a27;
+  --cortex-ink-2: #1b2735;
+  --cortex-ink-3: #2b3542;
+  --cortex-ink-4: #3a4654;
+  --cortex-fg-muted: #56616f;
+  --cortex-fg-subtle: #647082;
+  --cortex-fg-faint: #8a95a3;
+  --cortex-fg-ghost: #93a0b0;
+  --cortex-fg-disabled: #a6b0bd;
+
+  /* tints */
+  --cortex-teal-tint: #e3f4f0;
+  --cortex-blue-tint: #e9eefb;
+  --cortex-blue-tint-soft: #eaeffb;
+  --cortex-blue-border-soft: #cdd9f4;
+
+  /* semantic states — uncertainty/confidence signaling */
+  --cortex-warn: #8a6d2e;
+  --cortex-warn-bg: #f7f0df;
+  --cortex-warn-border: #ead9b5;
+  --cortex-verify: #b5803a;
+  --cortex-verify-bg: #fbf3e2;
+  --cortex-verify-border: #ecdcb6;
+  --cortex-alert: #a85b2a;
+  --cortex-alert-bg: #f9eadd;
+
+  /* spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 56px;
+
+  /* radius scale */
+  --radius-xs: 5px;
+  --radius-sm: 7px;
+  --radius-md: 9px;
+  --radius-lg: 13px;
+  --radius-xl: 16px;
+
+  /* shadows — used sparingly */
+  --shadow-1: 0 1px 2px rgba(16, 26, 39, 0.04);
+  --shadow-2: 0 6px 22px rgba(47, 91, 208, 0.12);
+
+  /* type scale */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15.5px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 34px;
+
+  /* mono letter-spacing */
+  --tracking-mono-tight: 0.04em;
+  --tracking-mono-wide: 0.12em;
+}
+
+@theme {
+  --color-cortex-bg: var(--cortex-bg);
+  --color-cortex-text: var(--cortex-text);
+  --color-cortex-surface: var(--cortex-surface);
+  --color-cortex-surface-muted: var(--cortex-surface-muted);
+  --color-cortex-canvas: var(--cortex-canvas);
+  --color-cortex-chip-bg: var(--cortex-chip-bg);
+  --color-cortex-border: var(--cortex-border);
+  --color-cortex-border-soft: var(--cortex-border-soft);
+  --color-cortex-border-strong: var(--cortex-border-strong);
+  --color-cortex-border-stronger: var(--cortex-border-stronger);
+  --color-cortex-ink: var(--cortex-ink);
+  --color-cortex-ink-2: var(--cortex-ink-2);
+  --color-cortex-ink-3: var(--cortex-ink-3);
+  --color-cortex-ink-4: var(--cortex-ink-4);
+  --color-cortex-fg-muted: var(--cortex-fg-muted);
+  --color-cortex-fg-subtle: var(--cortex-fg-subtle);
+  --color-cortex-fg-faint: var(--cortex-fg-faint);
+  --color-cortex-fg-ghost: var(--cortex-fg-ghost);
+  --color-cortex-fg-disabled: var(--cortex-fg-disabled);
+  --color-cortex-teal: var(--cortex-teal);
+  --color-cortex-teal-dark: var(--cortex-teal-dark);
+  --color-cortex-teal-tint: var(--cortex-teal-tint);
+  --color-cortex-blue: var(--cortex-blue);
+  --color-cortex-blue-tint: var(--cortex-blue-tint);
+  --color-cortex-blue-tint-soft: var(--cortex-blue-tint-soft);
+  --color-cortex-blue-border-soft: var(--cortex-blue-border-soft);
+  --color-cortex-nav: var(--cortex-nav);
+  --color-cortex-warn: var(--cortex-warn);
+  --color-cortex-warn-bg: var(--cortex-warn-bg);
+  --color-cortex-warn-border: var(--cortex-warn-border);
+  --color-cortex-verify: var(--cortex-verify);
+  --color-cortex-verify-bg: var(--cortex-verify-bg);
+  --color-cortex-verify-border: var(--cortex-verify-border);
+  --color-cortex-alert: var(--cortex-alert);
+  --color-cortex-alert-bg: var(--cortex-alert-bg);
+
+  --radius-cortex-xs: var(--radius-xs);
+  --radius-cortex-sm: var(--radius-sm);
+  --radius-cortex-md: var(--radius-md);
+  --radius-cortex-lg: var(--radius-lg);
+  --radius-cortex-xl: var(--radius-xl);
+
+  --spacing-cortex-1: var(--space-1);
+  --spacing-cortex-2: var(--space-2);
+  --spacing-cortex-3: var(--space-3);
+  --spacing-cortex-4: var(--space-4);
+  --spacing-cortex-5: var(--space-5);
+  --spacing-cortex-6: var(--space-6);
+  --spacing-cortex-7: var(--space-7);
+  --spacing-cortex-8: var(--space-8);
+  --spacing-cortex-9: var(--space-9);
+
+  --text-cortex-xs: var(--text-xs);
+  --text-cortex-sm: var(--text-sm);
+  --text-cortex-base: var(--text-base);
+  --text-cortex-md: var(--text-md);
+  --text-cortex-lg: var(--text-lg);
+  --text-cortex-xl: var(--text-xl);
+  --text-cortex-2xl: var(--text-2xl);
+  --text-cortex-3xl: var(--text-3xl);
 }
 
 * {
@@ -137,4 +277,18 @@ body {
 
 .cortex-nav-item:hover {
   background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.cortex-flag-marker {
+  scroll-margin-top: 120px;
+}
+
+.cortex-flag-card {
+  scroll-margin-top: 120px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.cortex-flag-card:target {
+  border-color: var(--cortex-blue) !important;
+  box-shadow: 0 0 0 3px var(--cortex-blue-tint-soft);
 }

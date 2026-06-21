@@ -4,6 +4,7 @@ import type { AuthSession, AuthUser } from "@/data/contracts";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { getMemoryStore } from "@/server/persistence/memory-store";
 import { connectRedis } from "@/server/persistence/redis/client";
+import { captureDegradedFallback } from "@/server/observability/sentry";
 
 export const SESSION_COOKIE = "cortex_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
@@ -28,6 +29,7 @@ export async function createSession(user: AuthUser): Promise<AuthSession> {
       return session;
     } catch (error) {
       console.warn("[cortex-auth] Redis unavailable; using memory session store", error);
+      captureDegradedFallback("Redis unavailable; using memory session store", { area: "auth.session-store.create", cause: error });
     }
   }
 
@@ -45,6 +47,7 @@ export async function getSession(id: string | undefined): Promise<AuthSession | 
       if (raw) return JSON.parse(raw) as AuthSession;
     } catch (error) {
       console.warn("[cortex-auth] Redis session read failed; checking memory", error);
+      captureDegradedFallback("Redis session read failed; checking memory", { area: "auth.session-store.read", cause: error });
     }
   }
 
@@ -65,6 +68,7 @@ export async function deleteSession(id: string | undefined): Promise<void> {
       await redis.del(sessionKey(id));
     } catch (error) {
       console.warn("[cortex-auth] Redis session delete failed", error);
+      captureDegradedFallback("Redis session delete failed", { area: "auth.session-store.delete", cause: error });
     }
   }
 }

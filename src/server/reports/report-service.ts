@@ -68,15 +68,42 @@ export async function updateDraftStatus(
   return saveDraft({ ...draft, status });
 }
 
+export type FlagResolution = "confirmed" | "dismissed";
+
+type ResolvedFlagRecord = GliaFlag & {
+  resolution: FlagResolution;
+  resolvedAt: string;
+};
+
+function parseFlagHistory(draft: ReportDraft): ResolvedFlagRecord[] {
+  try {
+    const parsed = JSON.parse(draft.agentNotes.flagHistory ?? "[]") as ResolvedFlagRecord[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function resolveDraftFlag(
   id: string,
-  flagId: string
+  flagId: string,
+  resolution: FlagResolution
 ): Promise<ReportDraft> {
   const draft = await getReportDraft(id);
   if (!draft) throw new Error("Draft not found");
-  const remaining = parseFlags(draft).filter((flag) => flag.id !== flagId);
+  const flags = parseFlags(draft);
+  const resolvedFlag = flags.find((flag) => flag.id === flagId);
+  const remaining = flags.filter((flag) => flag.id !== flagId);
+  const history = parseFlagHistory(draft);
+  const nextHistory = resolvedFlag
+    ? [...history, { ...resolvedFlag, resolution, resolvedAt: new Date().toISOString() }]
+    : history;
   return saveDraft({
     ...draft,
-    agentNotes: { ...draft.agentNotes, flags: JSON.stringify(remaining) },
+    agentNotes: {
+      ...draft.agentNotes,
+      flags: JSON.stringify(remaining),
+      flagHistory: JSON.stringify(nextHistory),
+    },
   });
 }

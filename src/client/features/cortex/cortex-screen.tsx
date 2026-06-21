@@ -43,13 +43,7 @@ export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
         />
       );
     case "history":
-      return (
-        <HistoryScreen
-          onGoReport={() => onNavigate("report")}
-          onCompare={() => workspace.openExplanation()}
-          onOpenEncounter={() => onNavigate("report")}
-        />
-      );
+      return <HistoryScreen onGoReport={() => onNavigate("report")} />;
     case "pipeline":
       return (
         <PipelineScreen

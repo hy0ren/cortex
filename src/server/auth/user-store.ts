@@ -6,6 +6,7 @@ import type { AuthUser } from "@/data/contracts";
 import { getRuntimeCapabilities } from "@/server/config/capabilities";
 import { getMemoryStore } from "@/server/persistence/memory-store";
 import { connectRedis } from "@/server/persistence/redis/client";
+import { captureDegradedFallback } from "@/server/observability/sentry";
 
 const scrypt = promisify(scryptCallback);
 
@@ -54,6 +55,7 @@ async function readUser(email: string): Promise<StoredUser | null> {
       if (raw) return JSON.parse(raw) as StoredUser;
     } catch (error) {
       console.warn("[cortex-auth] Redis user lookup failed; checking memory", error);
+      captureDegradedFallback("Redis user lookup failed; checking memory", { area: "auth.user-store.read", cause: error });
     }
   }
   return getMemoryStore().users.get(normalized) ?? null;
@@ -67,6 +69,7 @@ async function writeUser(user: StoredUser): Promise<void> {
       return;
     } catch (error) {
       console.warn("[cortex-auth] Redis user write failed; using memory", error);
+      captureDegradedFallback("Redis user write failed; using memory", { area: "auth.user-store.write", cause: error });
     }
   }
   getMemoryStore().users.set(user.email, user);

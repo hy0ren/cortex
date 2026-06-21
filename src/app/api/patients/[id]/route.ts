@@ -16,6 +16,6 @@ export async function GET(
     if (error instanceof Error && error.message === "Authentication required") {
       return fail("UNAUTHORIZED", error.message, 401);
     }
-    return routeError(error);
+    return routeError(error, { route: "patients.get" });
   }
 }

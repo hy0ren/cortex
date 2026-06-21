@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { ConnectorArrow } from "./icons";
 
+export type AgentVariant = "done" | "running" | "queued" | "flagged";
+
 type AgentCardProps = {
   step: string;
   name: string;
@@ -8,69 +10,137 @@ type AgentCardProps = {
   summary: ReactNode;
   footer: string;
   status: string;
-  variant?: "done" | "running" | "queued";
+  variant?: AgentVariant;
 };
 
-export function AgentCard({
-  step,
-  name,
-  role,
-  summary,
-  footer,
-  status,
-  variant = "done",
-}: AgentCardProps) {
-  const isRunning = variant === "running";
-  const isQueued = variant === "queued";
-  const stepColor = isRunning || step === "03" ? "#2F5BD0" : isQueued ? "#93A0B0" : "#0B7E70";
-  const stepBg = isRunning || step === "03" ? "#E9EEFB" : isQueued ? "#EEF0F3" : "#E3F4F0";
+const VARIANT_STYLES: Record<
+  AgentVariant,
+  {
+    surface: string;
+    border: string;
+    badgeColor: string;
+    badgeBg: string;
+    statusColor: string;
+    dotColor: string;
+    nameColor: string;
+    roleColor: string;
+    summaryColor: string;
+    footerColor: string;
+    footerBorder: string;
+    shadow: string;
+    pulse: boolean;
+    ring: boolean;
+  }
+> = {
+  queued: {
+    surface: "var(--cortex-surface-muted)",
+    border: "1px dashed var(--cortex-border-stronger)",
+    badgeColor: "var(--cortex-fg-ghost)",
+    badgeBg: "var(--cortex-border-soft)",
+    statusColor: "var(--cortex-fg-ghost)",
+    dotColor: "#c2c9d4",
+    nameColor: "var(--cortex-fg-muted)",
+    roleColor: "var(--cortex-fg-disabled)",
+    summaryColor: "var(--cortex-fg-faint)",
+    footerColor: "#b6bfca",
+    footerBorder: "var(--cortex-border-soft)",
+    shadow: "var(--shadow-1)",
+    pulse: false,
+    ring: false,
+  },
+  running: {
+    surface: "var(--cortex-surface)",
+    border: "1.5px solid var(--cortex-blue)",
+    badgeColor: "var(--cortex-blue)",
+    badgeBg: "var(--cortex-blue-tint)",
+    statusColor: "var(--cortex-blue)",
+    dotColor: "var(--cortex-blue)",
+    nameColor: "var(--cortex-ink)",
+    roleColor: "var(--cortex-fg-faint)",
+    summaryColor: "var(--cortex-fg-muted)",
+    footerColor: "#5a6fb0",
+    footerBorder: "#ebeff8",
+    shadow: "var(--shadow-2)",
+    pulse: true,
+    ring: true,
+  },
+  done: {
+    surface: "var(--cortex-surface)",
+    border: "1px solid var(--cortex-border)",
+    badgeColor: "var(--cortex-teal-dark)",
+    badgeBg: "var(--cortex-teal-tint)",
+    statusColor: "var(--cortex-teal-dark)",
+    dotColor: "var(--cortex-teal)",
+    nameColor: "var(--cortex-ink)",
+    roleColor: "var(--cortex-fg-faint)",
+    summaryColor: "var(--cortex-fg-muted)",
+    footerColor: "var(--cortex-fg-disabled)",
+    footerBorder: "var(--cortex-border-soft)",
+    shadow: "var(--shadow-1)",
+    pulse: false,
+    ring: false,
+  },
+  flagged: {
+    surface: "var(--cortex-verify-bg)",
+    border: "1px solid var(--cortex-verify-border)",
+    badgeColor: "var(--cortex-verify)",
+    badgeBg: "#f3e4c4",
+    statusColor: "var(--cortex-verify)",
+    dotColor: "var(--cortex-verify)",
+    nameColor: "var(--cortex-ink)",
+    roleColor: "var(--cortex-verify)",
+    summaryColor: "var(--cortex-ink-4)",
+    footerColor: "var(--cortex-verify)",
+    footerBorder: "var(--cortex-verify-border)",
+    shadow: "var(--shadow-1)",
+    pulse: false,
+    ring: false,
+  },
+};
+
+export function AgentCard({ step, name, role, summary, footer, status, variant = "done" }: AgentCardProps) {
+  const v = VARIANT_STYLES[variant];
 
   return (
     <div
       style={{
         flex: "1 1 0",
-        minWidth: 184,
-        background: isQueued ? "#FBFCFD" : "#fff",
-        border: isRunning ? "1.5px solid #2F5BD0" : isQueued ? "1px dashed #D5DAE1" : "1px solid #E5E8ED",
-        borderRadius: 13,
-        padding: "16px 16px 14px",
+        minWidth: 200,
+        background: v.surface,
+        border: v.border,
+        borderRadius: "var(--radius-lg)",
+        padding: "20px 20px 18px",
         display: "flex",
         flexDirection: "column",
-        boxShadow: isRunning ? "0 6px 22px rgba(47,91,208,.12)" : "0 1px 2px rgba(16,26,39,.03)",
-        animation: isRunning ? "ring 2s ease-out infinite" : undefined,
+        boxShadow: v.shadow,
+        animation: v.ring ? "ring 2s ease-out infinite" : undefined,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="flex items-center justify-between">
         <span
+          className="font-mono"
           style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            letterSpacing: ".08em",
-            color: stepColor,
-            background: stepBg,
+            fontSize: "var(--text-xs)",
+            letterSpacing: "var(--tracking-mono-tight)",
+            color: v.badgeColor,
+            background: v.badgeBg,
             padding: "3px 7px",
-            borderRadius: 5,
+            borderRadius: "var(--radius-xs)",
           }}
         >
           {step}
         </span>
         <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 11,
-            fontWeight: isRunning ? 700 : 600,
-            color: isQueued ? "#93A0B0" : isRunning ? "#2F5BD0" : "#0B7E70",
-          }}
+          className="flex items-center gap-1.5"
+          style={{ fontSize: 11, fontWeight: variant === "running" ? 700 : 600, color: v.statusColor }}
         >
           <span
             style={{
               width: 7,
               height: 7,
               borderRadius: "50%",
-              background: isQueued ? "#C2C9D4" : isRunning ? "#2F5BD0" : "#0E9C89",
-              animation: isRunning ? "pulse-dot 1.3s infinite" : undefined,
+              background: v.dotColor,
+              animation: v.pulse ? "pulse-dot 1.3s infinite" : undefined,
             }}
           />
           {status}
@@ -78,22 +148,21 @@ export function AgentCard({
       </div>
       <div
         style={{
-          fontSize: 16.5,
+          fontSize: "var(--text-lg)",
           fontWeight: 700,
-          color: isQueued ? "#6B7686" : "#101a27",
-          marginTop: 12,
+          color: v.nameColor,
+          marginTop: "var(--space-3)",
           letterSpacing: "-.01em",
         }}
       >
         {name}
       </div>
       <div
+        className="font-mono uppercase"
         style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          letterSpacing: ".06em",
-          textTransform: "uppercase",
-          color: isQueued ? "#A6B0BD" : "#93A0B0",
+          fontSize: "var(--text-xs)",
+          letterSpacing: "var(--tracking-mono-wide)",
+          color: v.roleColor,
           marginTop: 3,
         }}
       >
@@ -101,23 +170,23 @@ export function AgentCard({
       </div>
       <p
         style={{
-          fontSize: 12,
-          lineHeight: 1.5,
-          color: isQueued ? "#8A95A3" : "#56616F",
-          margin: "11px 0 0",
+          fontSize: "var(--text-sm)",
+          lineHeight: 1.55,
+          color: v.summaryColor,
+          margin: "var(--space-3) 0 0",
           flex: 1,
         }}
       >
         {summary}
       </p>
       <div
+        className="font-mono"
         style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          color: isRunning ? "#5A6FB0" : isQueued ? "#B6BFCA" : "#A6B0BD",
-          marginTop: 12,
-          paddingTop: 10,
-          borderTop: `1px solid ${isRunning ? "#EBEFF8" : "#EEF0F3"}`,
+          fontSize: "var(--text-xs)",
+          color: v.footerColor,
+          marginTop: "var(--space-3)",
+          paddingTop: "var(--space-2)",
+          borderTop: `1px solid ${v.footerBorder}`,
         }}
       >
         {footer}
@@ -135,22 +204,22 @@ export function PipelineConnector({
 }) {
   if (animated) {
     return (
-      <div style={{ flex: "0 0 30px", alignSelf: "center", height: 2, background: "#D8DEE6", position: "relative", overflow: "visible" }}>
+      <div style={{ flex: "0 0 30px", alignSelf: "center", height: 2, background: "var(--cortex-border-strong)", position: "relative", overflow: "visible" }}>
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(90deg,transparent,#2F5BD0,transparent)",
+            background: "linear-gradient(90deg,transparent,var(--cortex-blue),transparent)",
             backgroundSize: "55% 100%",
             animation: "flow 1.5s linear infinite",
           }}
         />
-        <ConnectorArrow color="#2F5BD0" />
+        <ConnectorArrow color="var(--cortex-blue)" />
       </div>
     );
   }
 
-  const color = done ? "#0E9C89" : "#CDD3DB";
+  const color = done ? "var(--cortex-teal)" : "#cdd3db";
   return (
     <div
       style={{

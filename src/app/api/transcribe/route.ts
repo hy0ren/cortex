@@ -38,6 +38,6 @@ export async function POST(request: Request) {
     });
     return ok({ result, mode: "configured" });
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "transcribe.create" });
   }
 }

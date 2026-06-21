@@ -26,6 +26,6 @@ export async function POST(request: Request) {
       draftId: body.draftId,
     }) }, { status: 201 });
   } catch (error) {
-    return routeError(error);
+    return routeError(error, { route: "pipeline.create" });
   }
 }

@@ -33,10 +33,10 @@ function NavItem({
         display: "flex",
         alignItems: "center",
         gap: 11,
-        padding: "9px 12px",
-        borderRadius: 8,
+        padding: "11px 12px",
+        borderRadius: "var(--radius-sm)",
         cursor: "pointer",
-        fontSize: 13.5,
+        fontSize: "var(--text-sm)",
         fontWeight: 500,
         background: style.bg,
         color: style.col,
@@ -77,19 +77,19 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
       style={{
         width: 244,
         flex: "none",
-        background: "#0B1220",
+        background: "var(--cortex-nav)",
         display: "flex",
         flexDirection: "column",
-        color: "#C9D2DE",
+        color: "#c9d2de",
       }}
     >
-      <div style={{ padding: "22px 20px 18px", display: "flex", alignItems: "center", gap: 11 }}>
+      <div style={{ padding: "var(--space-5) var(--space-5) var(--space-4)", display: "flex", alignItems: "center", gap: 11 }}>
         <div
           style={{
             width: 30,
             height: 30,
-            borderRadius: 8,
-            background: "linear-gradient(140deg,#0E9C89,#2F5BD0)",
+            borderRadius: "var(--radius-sm)",
+            background: "linear-gradient(140deg,var(--cortex-teal),var(--cortex-blue))",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -99,15 +99,15 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
           <CortexLogo />
         </div>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-.01em", color: "#fff", lineHeight: 1 }}>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 700, letterSpacing: "-.01em", color: "#fff", lineHeight: 1 }}>
             Cortex
           </div>
           <div
+            className="font-mono"
             style={{
-              fontFamily: "var(--font-mono)",
               fontSize: 9.5,
-              letterSpacing: ".14em",
-              color: "#5E6B7E",
+              letterSpacing: "var(--tracking-mono-wide)",
+              color: "#5e6b7e",
               marginTop: 3,
             }}
           >
@@ -116,14 +116,14 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
         </div>
       </div>
 
-      <div style={{ padding: "6px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+      <div style={{ padding: "var(--space-2) var(--space-3)", display: "flex", flexDirection: "column", gap: 2 }}>
         <div
+          className="font-mono"
           style={{
-            fontFamily: "var(--font-mono)",
             fontSize: 9.5,
-            letterSpacing: ".13em",
-            color: "#4B576A",
-            padding: "12px 12px 7px",
+            letterSpacing: "var(--tracking-mono-wide)",
+            color: "#4b576a",
+            padding: "var(--space-3) var(--space-3) 7px",
           }}
         >
           WORKSPACE
@@ -243,37 +243,37 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
         </div>
       </div>
 
-      <div style={{ marginTop: "auto", padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ marginTop: "auto", padding: "var(--space-4) var(--space-4)", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 8,
-            padding: "7px 10px",
-            borderRadius: 7,
-            background: "rgba(14,156,137,0.10)",
-            border: "1px solid rgba(14,156,137,0.22)",
+            padding: "8px 11px",
+            borderRadius: "var(--radius-sm)",
+            background: "rgba(14,156,137,0.12)",
+            border: "1px solid rgba(14,156,137,0.28)",
           }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3FBFAC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fbfac" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="5" y="11" width="14" height="9" rx="2" />
             <path d="M8 11V8a4 4 0 0 1 8 0v3" />
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#5CCDBB" }}>Synthetic data · No PHI</span>
+          <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "#5ccdbb" }}>Synthetic data · No PHI</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9, padding: "0 4px" }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5E6B7E" strokeWidth="2" strokeLinecap="round">
+        <div className="flex items-center gap-1.5" style={{ marginTop: 9, padding: "0 4px" }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5e6b7e" strokeWidth="2" strokeLinecap="round">
             <path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z" />
           </svg>
-          <span style={{ fontSize: 10.5, color: "#6B7789" }}>PHI de‑identified on‑device</span>
+          <span style={{ fontSize: "var(--text-xs)", color: "#6b7789" }}>PHI de‑identified on‑device</span>
         </div>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 10,
-            marginTop: 14,
-            paddingTop: 13,
+            marginTop: "var(--space-4)",
+            paddingTop: "var(--space-3)",
             borderTop: "1px solid rgba(255,255,255,0.06)",
           }}
         >

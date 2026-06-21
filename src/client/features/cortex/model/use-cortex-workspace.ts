@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AuthSession,
   GliaFlag,
@@ -11,10 +11,34 @@ import type {
 import { apiRequest } from "@/client/lib/api-client";
 import type { CortexScreen, NavStyle } from "./types";
 
+/** Minimal shape of the Web Speech API's SpeechRecognition — not in lib.dom.d.ts. */
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+};
+
+const VOICE_SUPPORTED =
+  typeof window !== "undefined" &&
+  Boolean((window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ??
+    (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition);
+
+export const VOICE_COMMANDS = [
+  { phrase: "open test results", description: "Jump to the report's Test Results section" },
+  { phrase: "read summary to patient", description: "Open the plain-language explanation for the patient" },
+  { phrase: "go to pipeline", description: "Switch to the pipeline view" },
+] as const;
+
 export function useCortexWorkspace(session: AuthSession) {
   const [screen, setScreen] = useState<CortexScreen>("pipeline");
   const [listening, setListening] = useState(false);
   const [explainOpen, setExplainOpen] = useState(false);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [workspace, setWorkspace] = useState<ReportWorkspace | null>(null);
   const [pipeline, setPipeline] = useState<PipelineRun | null>(null);
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
@@ -51,6 +75,53 @@ export function useCortexWorkspace(session: AuthSession) {
     }, 1400);
     return () => window.clearInterval(timer);
   }, [pipeline, refreshWorkspace]);
+
+  useEffect(() => {
+    if (!listening || !VOICE_SUPPORTED) return;
+
+    const Recognition = ((window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike })
+      .SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition)!;
+    const recognition = new Recognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onresult = (event) => {
+      const lastIndex = event.results.length - 1;
+      const transcript = event.results[lastIndex]?.[0]?.transcript?.toLowerCase().trim() ?? "";
+      if (!transcript) return;
+
+      if (transcript.includes("open test results")) {
+        setScreen("report");
+        window.requestAnimationFrame(() => {
+          window.setTimeout(() => {
+            document.getElementById("section-test-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 150);
+        });
+        setMessage("Voice command: opened Test Results.");
+      } else if (transcript.includes("read summary")) {
+        setExplainOpen(true);
+        setMessage("Voice command: opened patient summary.");
+      } else if (transcript.includes("go to pipeline") || transcript.includes("open pipeline")) {
+        setScreen("pipeline");
+        setMessage("Voice command: switched to pipeline.");
+      }
+    };
+
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognition.start();
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+
+    return () => {
+      recognitionRef.current = null;
+      recognition.onend = null;
+      recognition.stop();
+    };
+  }, [listening]);
 
   const navStyle = useCallback(
     (key: CortexScreen): NavStyle => {
@@ -136,14 +207,14 @@ export function useCortexWorkspace(session: AuthSession) {
     if (result) setWorkspace({ ...workspace, draft: result.draft });
   }, [runAction, workspace]);
 
-  const resolveFlag = useCallback(async (id: string) => {
+  const resolveFlag = useCallback(async (id: string, resolution: "confirmed" | "dismissed") => {
     if (!workspace) return;
     const result = await runAction(
       () => apiRequest<{ draft: ReportWorkspace["draft"] }>(`/api/drafts/${workspace.draft.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ flagId: id }),
+        body: JSON.stringify({ flagId: id, flagResolution: resolution }),
       }),
-      "Review item cleared."
+      resolution === "confirmed" ? "Flag confirmed and cleared." : "Flag dismissed."
     );
     if (result) {
       setWorkspace({
@@ -203,6 +274,7 @@ export function useCortexWorkspace(session: AuthSession) {
     screen,
     navigate: setScreen,
     listening,
+    voiceSupported: VOICE_SUPPORTED,
     toggleListening: () => setListening((current) => !current),
     explainOpen,
     openExplanation: () => setExplainOpen(true),

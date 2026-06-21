@@ -9,6 +9,7 @@ export function getAnthropicClient(): Anthropic {
     const { anthropic } = getEnv();
     client = new Anthropic({
       apiKey: requireEnvValue(anthropic.apiKey, "ANTHROPIC_API_KEY"),
+      ...(anthropic.baseUrl && { baseURL: anthropic.baseUrl }),
     });
   }
   return client;

@@ -27,6 +27,7 @@ export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
           busy={workspace.busy}
           onUpload={workspace.uploadFile}
           onTranscribe={workspace.transcribeFile}
+          onSaveTranscript={workspace.saveTranscript}
           onGenerate={workspace.startPipeline}
           onSaveDraft={workspace.saveDraft}
         />

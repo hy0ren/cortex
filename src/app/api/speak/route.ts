@@ -16,9 +16,10 @@ export async function POST(request: Request) {
     }
 
     const deepgram = getDeepgramClient();
+    // Aura 1 voices are included on standard Deepgram plans; Aura 2 requires separate access.
     const response = await deepgram.speak.request(
       { text },
-      { model: "aura-2-en-us" }
+      { model: "aura-athena-en" }
     );
     const stream = await response.getStream();
     if (!stream) {

@@ -290,7 +290,15 @@ export function useCortexWorkspace(session: AuthSession) {
       "Visit audio transcribed."
     );
     return result?.result.transcript ?? "";
-  }, [runAction]);
+  }, [runAction, workspace]);
+
+  const saveTranscript = useCallback(async (transcript: string) => {
+    if (!workspace?.encounter) return;
+    await apiRequest(`/api/encounters/${workspace.encounter.id}/transcript`, {
+      method: "PATCH",
+      body: JSON.stringify({ transcript }),
+    });
+  }, [workspace]);
 
   const exportReport = useCallback(() => {
     const article = document.querySelector("[data-report-document]");
@@ -341,12 +349,13 @@ export function useCortexWorkspace(session: AuthSession) {
     finalizeDraft,
     uploadFile,
     transcribeFile,
+    saveTranscript,
     exportReport,
     refreshWorkspace,
   }), [
     busy, draft, encounter, explainOpen, exportReport, finalizeDraft, flags, isReady,
     listening, loading, message, navStyle, patient, pipeline, refreshWorkspace,
-    resolveFlag, saveDraft, saveDraftSections, screen, session, startPipeline, togglePipeline,
+    resolveFlag, saveDraft, saveDraftSections, saveTranscript, screen, session, startPipeline, togglePipeline,
     transcribeFile, uploadFile, uploads,
   ]);
 }

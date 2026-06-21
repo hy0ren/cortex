@@ -13,6 +13,7 @@ type IntakeScreenProps = {
   busy: boolean;
   onUpload: (file: File) => Promise<void>;
   onTranscribe: (file: File) => Promise<string>;
+  onSaveTranscript: (transcript: string) => Promise<void>;
   onGenerate: () => Promise<void>;
   onSaveDraft: () => Promise<void>;
 };
@@ -23,7 +24,7 @@ const TEST_FILES = [
   { name: "EF_language_battery.xlsx", detail: "Trails, BNT, fluency, Stroop" },
 ];
 
-export function IntakeScreen({ patient, encounter, uploads, busy, onUpload, onTranscribe, onGenerate, onSaveDraft }: IntakeScreenProps) {
+export function IntakeScreen({ patient, encounter, uploads, busy, onUpload, onTranscribe, onSaveTranscript, onGenerate, onSaveDraft }: IntakeScreenProps) {
   const bars = buildWaveBars();
   const fileInput = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -50,29 +51,76 @@ export function IntakeScreen({ patient, encounter, uploads, busy, onUpload, onTr
     }
   }
 
+  const socketRef = useRef<WebSocket | null>(null);
+  const currentTranscriptRef = useRef(encounter?.transcript ?? "");
+
   async function toggleRecording() {
     if (recording) {
       recorder.current?.stop();
       recorder.current?.stream.getTracks().forEach((track) => track.stop());
       setRecording(false);
+      
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.send(new Uint8Array(0));
+        setTimeout(() => socketRef.current?.close(), 500);
+      } else {
+        await onSaveTranscript(currentTranscriptRef.current);
+      }
       return;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const nextRecorder = new MediaRecorder(stream);
-    audioChunks.current = [];
-    nextRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) audioChunks.current.push(event.data);
-    };
-    nextRecorder.onstop = () => {
-      const blob = new Blob(audioChunks.current, { type: nextRecorder.mimeType || "audio/webm" });
-      const file = new File([blob], `visit-${Date.now()}.webm`, { type: blob.type });
-      void selectFiles({ 0: file, length: 1, item: () => file } as unknown as FileList);
-    };
-    recorder.current = nextRecorder;
-    setElapsedSeconds(0);
-    nextRecorder.start();
-    setRecording(true);
+    try {
+      const res = await fetch("/api/transcribe/token");
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error?.message || "Failed to get token");
+      const token = data.data.token;
+
+      const wsUrl = "wss://api.deepgram.com/v1/listen?model=nova-2-medical&smart_format=true&interim_results=true&diarize=true";
+      const socket = new WebSocket(wsUrl, ["token", token]);
+      socketRef.current = socket;
+
+      let interimText = "";
+      currentTranscriptRef.current = transcript;
+
+      socket.onmessage = (message) => {
+        const received = JSON.parse(message.data);
+        const alt = received.channel?.alternatives?.[0];
+        if (alt && alt.transcript) {
+          if (received.is_final) {
+             currentTranscriptRef.current = currentTranscriptRef.current + (currentTranscriptRef.current ? " " : "") + alt.transcript;
+             setTranscript(currentTranscriptRef.current);
+             interimText = "";
+          } else {
+             interimText = alt.transcript;
+             setTranscript(currentTranscriptRef.current + (currentTranscriptRef.current ? " " : "") + interimText);
+          }
+        }
+      };
+
+      socket.onopen = async () => {
+         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+         const nextRecorder = new MediaRecorder(stream);
+         
+         nextRecorder.ondataavailable = (event) => {
+           if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+             socket.send(event.data);
+           }
+         };
+         
+         recorder.current = nextRecorder;
+         setElapsedSeconds(0);
+         nextRecorder.start(250);
+         setRecording(true);
+      };
+
+      socket.onclose = () => {
+         void onSaveTranscript(currentTranscriptRef.current);
+      };
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to start streaming: " + (err instanceof Error ? err.message : String(err)));
+    }
   }
 
   return (

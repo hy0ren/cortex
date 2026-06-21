@@ -5,12 +5,15 @@
  *   cp .env.example .env   # set REDIS_URL at minimum
  *   npm run seed:redis
  */
+import { loadEnvConfig } from "@next/env";
 import { PATIENT_FIXTURES } from "@/data/fixtures";
 import {
   clearPatientStore,
   disconnectRedis,
   seedPatients,
 } from "@/server/persistence/redis";
+
+loadEnvConfig(process.cwd());
 
 async function main() {
   const shouldClear = process.argv.includes("--clear");

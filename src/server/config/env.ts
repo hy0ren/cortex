@@ -14,6 +14,10 @@ export type CortexEnv = {
   };
   redis: {
     url: string;
+    cloudAccountKey: string;
+    cloudSecretKey: string;
+    cloudSubscriptionId: string;
+    cloudDatabaseId: string;
   };
   firebase: {
     apiKey: string;
@@ -29,6 +33,7 @@ export type CortexEnv = {
     apiKey: string;
     modelId: string;
     modelVersion: string;
+    captureContent: boolean;
   };
   sentry: {
     dsn: string;
@@ -41,50 +46,46 @@ export type CortexEnv = {
   };
 };
 
-function requireEnv(key: string, fallback?: string, strict = true): string {
-  const value = process.env[key] ?? fallback;
-  if (!value && strict) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value ?? "";
-}
-
 function optionalEnv(key: string, fallback = ""): string {
   return process.env[key] ?? fallback;
 }
 
-let cached: { env: CortexEnv; strict: boolean } | null = null;
+let cached: CortexEnv | null = null;
 
-/** Returns validated env. Throws if required server vars are missing (strict in production). */
-export function getEnv(options?: { strict?: boolean }): CortexEnv {
-  const strict = options?.strict ?? process.env.NODE_ENV === "production";
-  if (cached && cached.strict === strict) return cached.env;
+/** Returns server environment values. Each integration validates its own required fields. */
+export function getEnv(): CortexEnv {
+  if (cached) return cached;
 
   const env: CortexEnv = {
     anthropic: {
-      apiKey: requireEnv("ANTHROPIC_API_KEY", undefined, strict),
+      apiKey: optionalEnv("ANTHROPIC_API_KEY"),
       model: optionalEnv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
     },
     deepgram: {
-      apiKey: requireEnv("DEEPGRAM_API_KEY", undefined, strict),
+      apiKey: optionalEnv("DEEPGRAM_API_KEY"),
     },
     redis: {
-      url: optionalEnv("REDIS_URL", "redis://localhost:6379"),
+      url: optionalEnv("REDIS_URL"),
+      cloudAccountKey: optionalEnv("REDIS_CLOUD_ACCOUNT_KEY"),
+      cloudSecretKey: optionalEnv("REDIS_CLOUD_SECRET_KEY"),
+      cloudSubscriptionId: optionalEnv("REDIS_CLOUD_SUBSCRIPTION_ID"),
+      cloudDatabaseId: optionalEnv("REDIS_CLOUD_DATABASE_ID"),
     },
     firebase: {
-      apiKey: requireEnv("NEXT_PUBLIC_FIREBASE_API_KEY", undefined, strict),
-      authDomain: requireEnv("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", undefined, strict),
-      projectId: requireEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID", undefined, strict),
-      storageBucket: requireEnv("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", undefined, strict),
-      messagingSenderId: requireEnv("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", undefined, strict),
-      appId: requireEnv("NEXT_PUBLIC_FIREBASE_APP_ID", undefined, strict),
-      serviceAccountJson: requireEnv("FIREBASE_SERVICE_ACCOUNT_JSON", undefined, strict),
+      apiKey: optionalEnv("NEXT_PUBLIC_FIREBASE_API_KEY"),
+      authDomain: optionalEnv("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"),
+      projectId: optionalEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID"),
+      storageBucket: optionalEnv("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET"),
+      messagingSenderId: optionalEnv("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID"),
+      appId: optionalEnv("NEXT_PUBLIC_FIREBASE_APP_ID"),
+      serviceAccountJson: optionalEnv("FIREBASE_SERVICE_ACCOUNT_JSON"),
     },
     arize: {
-      spaceId: requireEnv("ARIZE_SPACE_ID", undefined, strict),
-      apiKey: requireEnv("ARIZE_API_KEY", undefined, strict),
+      spaceId: optionalEnv("ARIZE_SPACE_ID"),
+      apiKey: optionalEnv("ARIZE_API_KEY"),
       modelId: optionalEnv("ARIZE_MODEL_ID", "cortex-agents"),
       modelVersion: optionalEnv("ARIZE_MODEL_VERSION", "0.1.0"),
+      captureContent: optionalEnv("ARIZE_CAPTURE_CONTENT") === "true",
     },
     sentry: {
       dsn: optionalEnv("SENTRY_DSN", optionalEnv("NEXT_PUBLIC_SENTRY_DSN")),
@@ -97,8 +98,15 @@ export function getEnv(options?: { strict?: boolean }): CortexEnv {
     },
   };
 
-  cached = { env, strict };
+  cached = env;
   return env;
+}
+
+export function requireEnvValue(value: string, key: string): string {
+  if (!value || value.includes("your-")) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
 }
 
 /** Reset cache — useful in tests. */

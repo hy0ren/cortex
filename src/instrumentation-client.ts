@@ -5,3 +5,6 @@ Sentry.init({
   tracesSampleRate: 1.0,
   debug: false,
 });
+
+export const onRouterTransitionStart =
+  Sentry.captureRouterTransitionStart;

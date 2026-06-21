@@ -1,13 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import "server-only";
-import { getEnv } from "@/server/config/env";
+import { getEnv, requireEnvValue } from "@/server/config/env";
 
 let client: Anthropic | null = null;
 
 export function getAnthropicClient(): Anthropic {
   if (!client) {
     const { anthropic } = getEnv();
-    client = new Anthropic({ apiKey: anthropic.apiKey });
+    client = new Anthropic({
+      apiKey: requireEnvValue(anthropic.apiKey, "ANTHROPIC_API_KEY"),
+    });
   }
   return client;
 }

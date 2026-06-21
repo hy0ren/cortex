@@ -10,7 +10,7 @@ This repo contains the Cortex frontend prototype plus server infrastructure.
 |-------|-----------|---------|
 | Framework | Next.js 15 (App Router) + TypeScript | Vercel deploy target |
 | Styling | Tailwind CSS v4 + shadcn/ui | UI primitives (in `src/client/components/ui/`) |
-| LLM | Anthropic Claude Sonnet | Four-agent pipeline |
+| LLM | Anthropic Claude Sonnet | Five-agent pipeline |
 | Speech | Deepgram Nova-2 Medical | Visit audio → transcript |
 | Memory | Redis | Patient history + vector retrieval |
 | Auth | Firebase Auth | Clinician login |
@@ -98,6 +98,7 @@ Single-responsibility agents with focused prompts live in `src/server/ai/agents/
 
 - **Wernicke** — ingests transcript + patient data
 - **Norm** — interprets test scores against normative data
+- **Engram** — retrieves relevant prior patient history
 - **Broca** — drafts report sections
 - **Glia** — QA: consistency, completeness, uncertainty flags
 - **Band** — shared room protocol used by the pipeline service
@@ -138,7 +139,5 @@ ID token for an HTTP-only Cortex session, stored in Redis when available.
 
 ## Next steps
 
-1. Add production file parsing for PDF/XLSX score sheets.
-2. Add organization membership and role-based access controls.
-3. Add durable pipeline jobs/queues for multi-instance deployments.
-4. Add integration and browser tests to CI.
+See [`REMAINING_TASKS.md`](REMAINING_TASKS.md) for the prioritized, actionable
+production backlog from the latest repository audit.

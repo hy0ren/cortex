@@ -1,13 +1,13 @@
 import { createClient, DeepgramClient } from "@deepgram/sdk";
 import "server-only";
-import { getEnv } from "@/server/config/env";
+import { getEnv, requireEnvValue } from "@/server/config/env";
 
 let client: DeepgramClient | null = null;
 
 export function getDeepgramClient(): DeepgramClient {
   if (!client) {
     const { deepgram } = getEnv();
-    client = createClient(deepgram.apiKey);
+    client = createClient(requireEnvValue(deepgram.apiKey, "DEEPGRAM_API_KEY"));
   }
   return client;
 }

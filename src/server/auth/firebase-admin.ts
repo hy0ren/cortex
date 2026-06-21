@@ -1,6 +1,6 @@
 import admin from "firebase-admin";
 import "server-only";
-import { getEnv } from "@/server/config/env";
+import { getEnv, requireEnvValue } from "@/server/config/env";
 
 let initialized = false;
 
@@ -8,12 +8,20 @@ let initialized = false;
 export function getFirebaseAdmin() {
   if (!initialized) {
     const { firebase } = getEnv();
-    const serviceAccount = JSON.parse(firebase.serviceAccountJson) as admin.ServiceAccount;
+    const serviceAccount = JSON.parse(
+      requireEnvValue(
+        firebase.serviceAccountJson,
+        "FIREBASE_SERVICE_ACCOUNT_JSON"
+      )
+    ) as admin.ServiceAccount;
 
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        projectId: firebase.projectId,
+        projectId: requireEnvValue(
+          firebase.projectId,
+          "NEXT_PUBLIC_FIREBASE_PROJECT_ID"
+        ),
       });
     }
     initialized = true;

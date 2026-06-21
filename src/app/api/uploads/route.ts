@@ -22,8 +22,11 @@ export async function POST(request: Request) {
       name: file.name,
       kind,
       size: file.size,
-      status: "parsed",
-      detail: kind === "audio" ? "Ready for transcription" : "Validated and attached to session",
+      status: kind === "audio" ? "parsed" : "uploaded",
+      detail:
+        kind === "audio"
+          ? "Ready for transcription"
+          : "Validated and attached; structured parsing is pending",
     };
     const uploads = getMemoryStore().uploads.get(session.user.id) ?? [];
     getMemoryStore().uploads.set(session.user.id, [...uploads, asset]);

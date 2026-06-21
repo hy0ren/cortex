@@ -9,20 +9,31 @@ import { getMemoryStore } from "@/server/persistence/memory-store";
 export async function getWorkspace(
   clinicianId: string,
   patientId = "pat-demo-hayes",
-  draftId = "draft-hayes-2026"
+  draftId?: string
 ): Promise<ReportWorkspace> {
   const patient = await findPatient(patientId);
   if (!patient) throw new Error("Patient not found");
 
-  let draft = await getReportDraft(draftId);
+  const resolvedDraftId =
+    draftId ?? `draft-${patientId}-${clinicianId}`.replace(/[^a-zA-Z0-9_-]/g, "-");
+  let draft = await getReportDraft(resolvedDraftId);
+  if (draft && draft.clinicianId !== clinicianId) {
+    throw new Error("Draft not found");
+  }
   if (!draft) {
-    draft = createDemoDraft(clinicianId);
+    draft = createDemoDraft(clinicianId, {
+      id: resolvedDraftId,
+      patientId: patient.id,
+    });
     await upsertReportDraft(draft);
   }
 
   const flags = parseFlags(draft);
   const pipeline = [...getMemoryStore().pipelines.values()]
-    .find((run) => run.draftId === draft.id) ?? null;
+    .find(
+      (run) =>
+        run.draftId === draft.id && run.clinicianId === clinicianId
+    ) ?? null;
 
   return {
     patient,

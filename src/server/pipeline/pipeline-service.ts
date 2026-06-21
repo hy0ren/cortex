@@ -8,20 +8,67 @@ import { getReportDraft } from "@/server/persistence/drafts";
 import { saveDraft } from "@/server/reports/report-service";
 import { completeWithClaude } from "@/server/ai/anthropic";
 import { BROCA_SYSTEM_PROMPT, buildBrocaUserMessage } from "@/server/ai/agents/broca";
+import {
+  recordGeneration,
+  withAgentSpan,
+} from "@/server/observability/arize";
+import { searchPatientHistory } from "@/server/persistence/redis";
 
 const AGENT_SEQUENCE = ["wernicke", "norm", "engram", "broca", "glia"] as const;
+
+function applyBrocaOutput(
+  current: Record<string, string>,
+  output: string
+): Record<string, string> {
+  try {
+    const normalized = output
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "");
+    const parsed = JSON.parse(normalized) as {
+      sections?: Record<string, string>;
+      draftNotes?: string[];
+    };
+    const sections = parsed.sections;
+    if (!sections) return { ...current, generatedDraft: output };
+
+    const summary = sections["SUMMARY AND IMPRESSIONS"];
+    const recommendations = sections.RECOMMENDATIONS;
+    return {
+      ...current,
+      ...(sections["REASON FOR REFERRAL"] && {
+        reasonForReferral: sections["REASON FOR REFERRAL"],
+      }),
+      ...(sections["BACKGROUND AND HISTORY"] && {
+        history: sections["BACKGROUND AND HISTORY"],
+      }),
+      ...(sections["BEHAVIORAL OBSERVATIONS"] && {
+        behavioralObservations: sections["BEHAVIORAL OBSERVATIONS"],
+      }),
+      ...(sections["TEST RESULTS AND INTERPRETATION"] && {
+        interpretation: sections["TEST RESULTS AND INTERPRETATION"],
+      }),
+      ...((summary || recommendations) && {
+        summary: [summary, recommendations].filter(Boolean).join("\n\n"),
+      }),
+    };
+  } catch {
+    return { ...current, generatedDraft: output };
+  }
+}
 
 function log(agent: AgentStatus["agent"], phase: AgentStatus["phase"], message: string): AgentStatus {
   return { agent, phase, message, timestamp: new Date().toISOString() };
 }
 
 export async function createPipelineRun(input: {
+  clinicianId: string;
   patientId: string;
   draftId: string;
 }): Promise<PipelineRun> {
   const now = new Date().toISOString();
   const run: PipelineRun = {
     id: randomUUID(),
+    clinicianId: input.clinicianId,
     patientId: input.patientId,
     draftId: input.draftId,
     phase: "running",
@@ -65,13 +112,48 @@ export async function advancePipeline(id: string): Promise<PipelineRun> {
     updatedAt: new Date().toISOString(),
     agentLog: [
       ...run.agentLog,
-      log(agent === "engram" ? "band" : agent, "done", `${agent} completed`),
+      log(agent, "done", `${agent} completed`),
     ],
   };
   getMemoryStore().pipelines.set(id, next);
 
-  if (complete) await completeDraft(next);
-  return next;
+  return withAgentSpan(
+    `cortex.agent.${agent}`,
+    {
+      agent,
+      sessionId: next.id,
+      patientId: next.patientId,
+    },
+    async (span) => {
+      span.setAttributes({
+        "pipeline.progress": next.progress,
+        "pipeline.phase": next.phase,
+      });
+      if (
+        agent === "engram" &&
+        getRuntimeCapabilities().redis === "configured"
+      ) {
+        const patient = await findPatient(next.patientId);
+        const draft = await getReportDraft(next.draftId);
+        if (patient && draft) {
+          const evidence = await searchPatientHistory(
+            `${patient.demographics.referralReason}\n${patient.visitTranscript}`,
+            5
+          );
+          await saveDraft({
+            ...draft,
+            agentNotes: {
+              ...draft.agentNotes,
+              engramEvidence: JSON.stringify(evidence),
+            },
+          });
+          span.setAttribute("engram.result_count", evidence.length);
+        }
+      }
+      if (complete) await completeDraft(next);
+      return next;
+    }
+  );
 }
 
 async function completeDraft(run: PipelineRun) {
@@ -82,23 +164,54 @@ async function completeDraft(run: PipelineRun) {
   let sections = draft.sections;
   if (getRuntimeCapabilities().anthropic === "configured") {
     try {
-      const output = await completeWithClaude({
-        system: BROCA_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: buildBrocaUserMessage({
+      const input = buildBrocaUserMessage({
           clinicalContext: patient.visitTranscript,
           normativeInterpretation: patient.testBattery
             .map((score) => `${score.test} ${score.subtest ?? ""}: ${score.classification}`)
             .join("\n"),
           patientName: patient.demographics.name,
           referralReason: patient.demographics.referralReason,
-        }) }],
       });
-      sections = { ...sections, generatedDraft: output };
+      const output = await withAgentSpan(
+        "cortex.agent.broca.generate",
+        {
+          agent: "broca",
+          sessionId: run.id,
+          patientId: run.patientId,
+        },
+        async () => {
+          const generated = await completeWithClaude({
+            system: BROCA_SYSTEM_PROMPT,
+            messages: [{ role: "user", content: input }],
+          });
+          recordGeneration(input, generated);
+          return generated;
+        }
+      );
+      sections = applyBrocaOutput(sections, output);
     } catch (error) {
       console.warn("[cortex-pipeline] Claude generation failed; retaining deterministic draft", error);
     }
   }
 
-  const completed: ReportDraft = { ...draft, sections, status: "review" };
-  await saveDraft(completed);
+  await withAgentSpan(
+    "cortex.agent.glia.review",
+    {
+      agent: "glia",
+      sessionId: run.id,
+      patientId: run.patientId,
+    },
+    async (span) => {
+      let unresolvedFlags = 0;
+      try {
+        const flags = JSON.parse(draft.agentNotes.flags ?? "[]") as unknown;
+        unresolvedFlags = Array.isArray(flags) ? flags.length : 0;
+      } catch {
+        unresolvedFlags = 0;
+      }
+      span.setAttribute("glia.unresolved_flags", unresolvedFlags);
+      const completed: ReportDraft = { ...draft, sections, status: "review" };
+      await saveDraft(completed);
+    }
+  );
 }

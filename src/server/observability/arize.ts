@@ -5,20 +5,16 @@ import { BasicTracerProvider, BatchSpanProcessor } from "@opentelemetry/sdk-trac
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import "server-only";
 import type { AgentId } from "@/data/contracts";
+import { getEnv } from "@/server/config/env";
 
 let provider: BasicTracerProvider | null = null;
 
 function arizeConfig() {
-  const spaceId = process.env.ARIZE_SPACE_ID;
-  const apiKey = process.env.ARIZE_API_KEY;
+  const { arize } = getEnv();
+  const { spaceId, apiKey } = arize;
   if (!spaceId || !apiKey) return null;
 
-  return {
-    spaceId,
-    apiKey,
-    modelId: process.env.ARIZE_MODEL_ID ?? "cortex-agents",
-    modelVersion: process.env.ARIZE_MODEL_VERSION ?? "0.1.0",
-  };
+  return arize;
 }
 
 /** True when Arize OTLP credentials are present. */
@@ -112,10 +108,15 @@ export function recordGeneration(
 ) {
   const span = trace.getActiveSpan();
   if (!span) return;
+  const { arize } = getEnv();
 
   span.setAttributes({
-    "llm.input": input.slice(0, 2000),
-    "llm.output": output.slice(0, 2000),
+    "llm.input_length": input.length,
+    "llm.output_length": output.length,
+    ...(arize.captureContent && {
+      "llm.input": input.slice(0, 2000),
+      "llm.output": output.slice(0, 2000),
+    }),
     ...(meta?.latencyMs !== undefined && { "llm.latency_ms": meta.latencyMs }),
     ...(meta?.promptTokens !== undefined && { "llm.prompt_tokens": meta.promptTokens }),
     ...(meta?.completionTokens !== undefined && {

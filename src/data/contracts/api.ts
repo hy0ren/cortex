@@ -8,6 +8,8 @@ export type RuntimeCapabilities = {
   redis: RuntimeMode;
   anthropic: RuntimeMode;
   deepgram: RuntimeMode;
+  arize: RuntimeMode;
+  sentry: RuntimeMode;
 };
 
 export type AuthUser = {
@@ -52,6 +54,7 @@ export type PipelinePhase = "idle" | "running" | "paused" | "complete" | "error"
 
 export type PipelineRun = {
   id: string;
+  clinicianId: string;
   patientId: string;
   draftId: string;
   phase: PipelinePhase;

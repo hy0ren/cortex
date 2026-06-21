@@ -12,10 +12,13 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireRequestSession();
+    const session = await requireRequestSession();
     const { id } = await context.params;
     const draft = await getReportDraft(id);
     if (!draft) return fail("NOT_FOUND", "Draft not found", 404);
+    if (draft.clinicianId !== session.user.id) {
+      return fail("FORBIDDEN", "Draft does not belong to this session", 403);
+    }
     return ok({ draft });
   } catch (error) {
     return routeError(error);
@@ -27,8 +30,13 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireRequestSession();
+    const session = await requireRequestSession();
     const { id } = await context.params;
+    const existing = await getReportDraft(id);
+    if (!existing) return fail("NOT_FOUND", "Draft not found", 404);
+    if (existing.clinicianId !== session.user.id) {
+      return fail("FORBIDDEN", "Draft does not belong to this session", 403);
+    }
     const body = await request.json() as {
       status?: "idle" | "generating" | "review" | "finalized";
       flagId?: string;
@@ -42,8 +50,6 @@ export async function PATCH(
       return ok({ draft: await updateDraftStatus(id, body.status) });
     }
     if (body.sections) {
-      const existing = await getReportDraft(id);
-      if (!existing) return fail("NOT_FOUND", "Draft not found", 404);
       return ok({ draft: await saveDraft({ ...existing, sections: body.sections }) });
     }
     return fail("INVALID_REQUEST", "No supported draft update supplied");

@@ -20,6 +20,12 @@ export {
 export type { DomainInterpretation, NormInput, NormOutput } from "./norm";
 
 export {
+  AGENT_ID as ENGRAM_AGENT_ID,
+  ENGRAM_SYSTEM_PROMPT,
+} from "./engram";
+export type { EngramEvidence } from "./engram";
+
+export {
   AGENT_ID as BROCA_AGENT_ID,
   BROCA_SYSTEM_PROMPT,
   buildBrocaUserMessage,

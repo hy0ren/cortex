@@ -10,6 +10,15 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) return fail("INVALID_FILE", "An audio file is required");
+    if (file.size > 25 * 1024 * 1024) {
+      return fail("FILE_TOO_LARGE", "Audio files must be 25MB or smaller");
+    }
+    if (
+      !file.type.startsWith("audio/") &&
+      !/\.(wav|mp3|m4a|webm|ogg|flac)$/i.test(file.name)
+    ) {
+      return fail("INVALID_FILE", "A supported audio file is required");
+    }
 
     if (getRuntimeCapabilities().deepgram === "demo") {
       return ok({

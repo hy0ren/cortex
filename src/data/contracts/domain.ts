@@ -57,7 +57,13 @@ export type ReportDraft = {
 };
 
 /** Agent identifiers in the Cortex pipeline. */
-export type AgentId = "wernicke" | "norm" | "broca" | "glia" | "band";
+export type AgentId =
+  | "wernicke"
+  | "norm"
+  | "engram"
+  | "broca"
+  | "glia"
+  | "band";
 
 export type AgentStatus = {
   agent: AgentId;

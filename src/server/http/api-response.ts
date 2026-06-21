@@ -19,6 +19,13 @@ export function fail(
 
 export function routeError(error: unknown) {
   const message = error instanceof Error ? error.message : "Unexpected server error";
+  if (message === "Authentication required") {
+    return fail("UNAUTHORIZED", message, 401);
+  }
   console.error("[cortex-api]", error);
-  return fail("INTERNAL_ERROR", message, 500);
+  return fail(
+    "INTERNAL_ERROR",
+    process.env.NODE_ENV === "production" ? "Unexpected server error" : message,
+    500
+  );
 }

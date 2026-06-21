@@ -240,7 +240,14 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                 </button>
               </div>
               <div style={{ padding: "6px 18px 14px" }}>
-                {[...TEST_FILES, ...uploads.map((asset) => ({ name: asset.name, detail: asset.detail }))].map((file, i, files) => (
+                {[
+                  ...TEST_FILES.map((file) => ({ ...file, status: "Parsed" })),
+                  ...uploads.map((asset) => ({
+                    name: asset.name,
+                    detail: asset.detail,
+                    status: asset.status === "parsed" ? "Parsed" : "Uploaded",
+                  })),
+                ].map((file, i, files) => (
                   <div
                     key={file.name}
                     style={{
@@ -274,7 +281,7 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                     </div>
                     <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: "#0B7E70" }}>
                       <CheckIcon color="#0B7E70" size={13} />
-                      Parsed
+                      {file.status}
                     </span>
                   </div>
                 ))}
@@ -298,7 +305,7 @@ export function IntakeScreen({ patient, uploads, busy, onUpload, onTranscribe, o
                   }}
                 >
                   <div style={{ fontSize: 12, fontWeight: 500, color: "#647082" }}>Drop additional score sheets</div>
-                  <div style={{ fontSize: 11, marginTop: 2 }}>CSV, PDF, or XLSX · de‑identified on upload</div>
+                  <div style={{ fontSize: 11, marginTop: 2 }}>CSV, PDF, or XLSX · validate files contain no unnecessary identifiers</div>
                 </div>
                 <input
                   ref={fileInput}

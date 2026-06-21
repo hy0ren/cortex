@@ -11,10 +11,13 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireRequestSession();
+    const session = await requireRequestSession();
     const { id } = await context.params;
     const run = getPipelineRun(id);
     if (!run) return fail("NOT_FOUND", "Pipeline run not found", 404);
+    if (run.clinicianId !== session.user.id) {
+      return fail("FORBIDDEN", "Pipeline run does not belong to this session", 403);
+    }
     return ok({ run });
   } catch (error) {
     return routeError(error);
@@ -26,8 +29,13 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireRequestSession();
+    const session = await requireRequestSession();
     const { id } = await context.params;
+    const run = getPipelineRun(id);
+    if (!run) return fail("NOT_FOUND", "Pipeline run not found", 404);
+    if (run.clinicianId !== session.user.id) {
+      return fail("FORBIDDEN", "Pipeline run does not belong to this session", 403);
+    }
     const body = await request.json() as {
       action?: "advance" | "pause" | "resume";
     };

@@ -67,12 +67,15 @@ export const DEMO_REPORT_SECTIONS: Record<string, string> = {
     "Ms. Hayes demonstrates a circumscribed amnestic profile on a background of otherwise preserved cognition. Neurology follow-up, compensatory strategies, medication review, affective screening, and repeat evaluation in 12 months are recommended.",
 };
 
-export function createDemoDraft(clinicianId: string): ReportDraft {
+export function createDemoDraft(
+  clinicianId: string,
+  options?: { id?: string; patientId?: string }
+): ReportDraft {
   const now = new Date().toISOString();
   return {
-    id: "draft-hayes-2026",
+    id: options?.id ?? "draft-hayes-2026",
     clinicianId,
-    patientId: DEMO_ACTIVE_PATIENT.id,
+    patientId: options?.patientId ?? DEMO_ACTIVE_PATIENT.id,
     status: "review",
     sections: { ...DEMO_REPORT_SECTIONS },
     agentNotes: {

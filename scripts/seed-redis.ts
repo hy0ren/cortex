@@ -10,7 +10,7 @@ import {
   clearPatientStore,
   disconnectRedis,
   seedPatients,
-} from "@/lib/redis";
+} from "@/server/persistence/redis";
 
 async function main() {
   const shouldClear = process.argv.includes("--clear");

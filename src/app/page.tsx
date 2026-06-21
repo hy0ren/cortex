@@ -1,4 +1,4 @@
-import { CortexApp } from "@/components/cortex/cortex-app";
+import { CortexApp } from "@/client/features/cortex";
 
 export default function Home() {
   return <CortexApp />;

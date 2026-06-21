@@ -2,14 +2,14 @@
 
 Documentation copilot for neuropsychologists — turns patient visits (voice transcript + structured test scores) into clinically-structured neuropsychological reports.
 
-This repo currently contains **infrastructure only**. Frontend routes and API handlers are built separately.
+This repo contains the Cortex frontend prototype plus server infrastructure.
 
 ## Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | Framework | Next.js 15 (App Router) + TypeScript | Vercel deploy target |
-| Styling | Tailwind CSS v4 + shadcn/ui | UI primitives (in `src/components/ui/`) |
+| Styling | Tailwind CSS v4 + shadcn/ui | UI primitives (in `src/client/components/ui/`) |
 | LLM | Anthropic Claude Sonnet | Four-agent pipeline |
 | Speech | Deepgram Nova-2 Medical | Visit audio → transcript |
 | Memory | Redis | Patient history + vector retrieval |
@@ -29,16 +29,22 @@ Fixtures       → synthetic patients only (no real PHI)
 
 ```
 src/
-├── agents/           # Wernicke, Norm, Broca, Glia, Band — prompts + types
-├── data/fixtures/    # 4 synthetic patients with full test batteries
-├── lib/
-│   ├── anthropic.ts  # Claude client wrapper
-│   ├── deepgram/     # Speech-to-text
-│   ├── firebase/     # Auth (client) + drafts (Firestore admin)
-│   ├── redis/        # Patient store + vector search
-│   ├── observability/# Arize tracing + Sentry helpers
-│   └── env.ts        # Validated environment config
-├── types/            # Shared domain types
+├── app/              # Next.js routes and global styles
+├── client/           # Browser-safe UI, feature state, and client SDKs
+│   ├── components/   # Shared UI primitives
+│   ├── features/     # Product features grouped by workflow
+│   └── lib/          # Browser-only adapters and helpers
+├── data/             # Shared contracts, synthetic fixtures, and demo view data
+│   ├── contracts/    # Types shared across client and server
+│   ├── demo/         # Deterministic frontend presentation data
+│   └── fixtures/     # Synthetic patient records
+├── server/           # Server-only AI, auth, persistence, speech, and telemetry
+│   ├── ai/           # Claude client and agent prompts
+│   ├── auth/         # Firebase Admin
+│   ├── persistence/  # Firestore drafts and Redis patient memory
+│   ├── speech/       # Deepgram transcription
+│   ├── observability/# Arize tracing and Sentry helpers
+│   └── config/       # Validated private environment config
 └── instrumentation.ts
 scripts/
 └── seed-redis.ts     # Seed fixtures into Redis
@@ -76,7 +82,7 @@ npm run seed:redis -- --clear   # wipe + re-seed
 
 ## Agent pipeline (infrastructure)
 
-Four single-responsibility agents with focused prompts in `src/agents/`:
+Single-responsibility agents with focused prompts live in `src/server/ai/agents/`:
 
 - **Wernicke** — ingests transcript + patient data
 - **Norm** — interprets test scores against normative data
@@ -97,9 +103,9 @@ See [`.env.example`](.env.example) for all required keys:
 - `ARIZE_SPACE_ID` + `ARIZE_API_KEY` — agent observability
 - `SENTRY_DSN` — error monitoring
 
-## Next steps (not in this layer)
+## Next steps
 
-1. Port `./design` HTML into Next.js routes/components
-2. Build `/api/generate-report` with Band orchestration + SSE streaming
+1. Build `/api/generate-report` with Band orchestration + SSE streaming
+2. Replace demo view data with typed API responses
 3. Wire Pipeline view to agent status events
 4. Connect Firebase Auth login flow

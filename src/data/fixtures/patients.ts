@@ -1,4 +1,4 @@
-import type { PatientRecord } from "@/types";
+import type { PatientRecord } from "@/data/contracts";
 
 /**
  * Synthetic patient fixtures — NO real PHI.

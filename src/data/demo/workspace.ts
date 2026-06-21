@@ -79,7 +79,7 @@ export function createDemoDraft(
     status: "review",
     sections: { ...DEMO_REPORT_SECTIONS },
     agentNotes: {
-      flags: JSON.stringify(INITIAL_FLAGS),
+      flags: "[]",
     },
     createdAt: now,
     updatedAt: now,

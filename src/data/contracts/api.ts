@@ -11,6 +11,7 @@ export type RuntimeCapabilities = {
   deepgram: RuntimeMode;
   arize: RuntimeMode;
   sentry: RuntimeMode;
+  band: RuntimeMode;
 };
 
 export type AuthUser = {
@@ -64,6 +65,8 @@ export type PipelineRun = {
   startedAt: string;
   updatedAt: string;
   agentLog: AgentStatus[];
+  bandRoomId?: string;
+  evalVariant?: string;
 };
 
 export type ReportWorkspace = {

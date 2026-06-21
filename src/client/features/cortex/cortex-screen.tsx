@@ -43,11 +43,19 @@ export function CortexScreen({ workspace, onNavigate }: CortexScreenProps) {
         />
       );
     case "history":
-      return <HistoryScreen onGoReport={() => onNavigate("report")} />;
+      return (
+        <HistoryScreen
+          patient={workspace.patient}
+          draft={workspace.draft}
+          onGoReport={() => onNavigate("report")}
+        />
+      );
     case "pipeline":
       return (
         <PipelineScreen
           run={workspace.pipeline}
+          draft={workspace.draft}
+          flags={workspace.flags}
           busy={workspace.busy}
           onTogglePause={workspace.togglePipeline}
           onGoReport={() => onNavigate("report")}

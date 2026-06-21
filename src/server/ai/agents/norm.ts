@@ -23,6 +23,12 @@ export type NormInput = {
   patient: PatientRecord;
   testBattery: TestScore[];
   clinicalContext?: string;
+  retrievedNorms?: Array<{
+    source: string;
+    snippet: string;
+    test?: string;
+    domain?: string;
+  }>;
 };
 
 export type DomainInterpretation = {
@@ -61,6 +67,7 @@ export function buildNormUserMessage(input: NormInput): string {
       testBattery: input.testBattery,
       clinicalContext: input.clinicalContext ?? null,
       priorReports: input.patient.priorReports,
+      retrievedNorms: input.retrievedNorms ?? [],
     },
     null,
     2

@@ -1,71 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { PatientRecord, ReportDraft } from "@/data/contracts";
 import { Button } from "@/client/components/ui/button";
+import { buildEncounterTimeline, type EncounterRow } from "../model/history-view";
 
 type HistoryScreenProps = {
+  patient: PatientRecord;
+  draft: ReportDraft;
   onGoReport: () => void;
 };
 
-type EncounterAction = "openDraft" | "compare" | "openReport" | "openNote";
-
-type Encounter = {
-  id: string;
-  date: string;
-  badge: string;
-  badgeStyle: { color: string; bg: string; border: string };
-  title: string;
-  summary: string;
-  moca?: number;
-  active?: boolean;
-  extra?: string;
-  actions: EncounterAction[];
-};
-
-const ENCOUNTERS: Encounter[] = [
-  {
-    id: "enc-2026-06-18",
-    date: "18 Jun 2026",
-    badge: "Draft",
-    badgeStyle: { color: "var(--cortex-warn)", bg: "var(--cortex-warn-bg)", border: "var(--cortex-warn-border)" },
-    title: "Comprehensive Neuropsychological Evaluation",
-    summary: "Full battery. Amnestic profile — delayed recall Borderline; other domains preserved. Impression: amnestic MCI.",
-    active: true,
-    extra: "Today",
-    actions: ["openDraft", "compare"],
-  },
-  {
-    id: "enc-2025-12-02",
-    date: "02 Dec 2025",
-    badge: "Final",
-    badgeStyle: { color: "var(--cortex-teal-dark)", bg: "var(--cortex-teal-tint)", border: "transparent" },
-    title: "Cognitive screening — follow‑up",
-    summary: "MoCA 24/30. Mild decline from baseline, predominantly delayed recall. Recommended full evaluation.",
-    moca: 24,
-    actions: ["openReport", "compare"],
-  },
-  {
-    id: "enc-2025-06-15",
-    date: "15 Jun 2025",
-    badge: "Final",
-    badgeStyle: { color: "var(--cortex-teal-dark)", bg: "var(--cortex-teal-tint)", border: "transparent" },
-    title: "Initial consultation",
-    summary: "Memory complaint raised by family. MoCA 27/30. Baseline labs and thyroid panel ordered.",
-    moca: 27,
-    actions: ["openNote", "compare"],
-  },
-  {
-    id: "enc-2024-09-10",
-    date: "10 Sep 2024",
-    badge: "Intake",
-    badgeStyle: { color: "var(--cortex-fg-subtle)", bg: "var(--cortex-chip-bg)", border: "transparent" },
-    title: "Referral intake",
-    summary: "Established care. PMH hypertension, hypothyroidism. Family history of late‑onset dementia recorded.",
-    actions: [],
-  },
-];
-
-const MOCA_ENCOUNTERS = ENCOUNTERS.filter((enc) => typeof enc.moca === "number");
+type EncounterAction = EncounterRow["actions"][number];
+type Encounter = EncounterRow;
 
 function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   return (
@@ -103,10 +50,15 @@ function Modal({ onClose, children }: { onClose: () => void; children: React.Rea
   );
 }
 
-export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
+export function HistoryScreen({ patient, draft, onGoReport }: HistoryScreenProps) {
+  const encounters = useMemo(
+    () => buildEncounterTimeline(patient, draft),
+    [patient, draft]
+  );
+  const mocaEncounters = encounters.filter((enc) => typeof enc.moca === "number");
   const [openEncounterId, setOpenEncounterId] = useState<string | null>(null);
   const [compareOpen, setCompareOpen] = useState(false);
-  const openEncounter = ENCOUNTERS.find((enc) => enc.id === openEncounterId) ?? null;
+  const openEncounter = encounters.find((enc) => enc.id === openEncounterId) ?? null;
 
   return (
     <div className="sa" style={{ flex: 1, overflowY: "auto", padding: "32px 36px 44px" }}>
@@ -142,7 +94,7 @@ export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
           >
             <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", marginBottom: "var(--space-2)" }}>MoCA trend · tap to compare</div>
             <div className="flex items-end gap-1.5" style={{ height: 38 }}>
-              {MOCA_ENCOUNTERS.map((enc, i) => (
+              {mocaEncounters.map((enc, i) => (
                 <div
                   key={enc.id}
                   style={{
@@ -155,7 +107,7 @@ export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
               ))}
             </div>
             <div className="font-mono" style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-disabled)", marginTop: 6 }}>
-              {MOCA_ENCOUNTERS.map((enc) => enc.moca).join(" → ")}
+              {mocaEncounters.map((enc) => enc.moca).join(" → ")}
             </div>
           </button>
         </div>
@@ -163,8 +115,8 @@ export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
         <div style={{ position: "relative", paddingLeft: 30 }}>
           <div style={{ position: "absolute", left: 8, top: 8, bottom: 8, width: 2, background: "var(--cortex-border-strong)" }} />
 
-          {ENCOUNTERS.map((enc, i) => (
-            <div key={enc.id} style={{ position: "relative", marginBottom: i < ENCOUNTERS.length - 1 ? "var(--space-4)" : 0 }}>
+          {encounters.map((enc, i) => (
+            <div key={enc.id} style={{ position: "relative", marginBottom: i < encounters.length - 1 ? "var(--space-4)" : 0 }}>
               <div
                 style={{
                   position: "absolute",
@@ -265,7 +217,7 @@ export function HistoryScreen({ onGoReport }: HistoryScreenProps) {
               </tr>
             </thead>
             <tbody>
-              {ENCOUNTERS.map((enc) => (
+              {encounters.map((enc) => (
                 <tr key={enc.id} style={{ borderBottom: "1px solid var(--cortex-border-soft)" }}>
                   <td style={{ padding: "9px 0", color: "var(--cortex-ink-2)" }}>
                     {enc.date} — {enc.title}

@@ -1,23 +1,45 @@
 "use client";
 
-import type { PipelineRun } from "@/data/contracts";
+import type { GliaFlag, PipelineRun, ReportDraft } from "@/data/contracts";
 import { ArrowRight } from "../components/icons";
 import { AgentCard, PipelineConnector as Connector, type AgentVariant } from "../components/pipeline-stage";
 import { Button } from "@/client/components/ui/button";
+import {
+  activityTimeline,
+  agentCardFooter,
+  agentCardSummary,
+  completedAgentCount,
+  groundedTags,
+  liveDraftPreview,
+  pipelineStatusLabel,
+} from "../model/pipeline-view";
 
 type PipelineScreenProps = {
   run: PipelineRun | null;
+  draft: ReportDraft | null;
+  flags: GliaFlag[];
   busy: boolean;
   onTogglePause: () => Promise<void>;
   onGoReport: () => void;
   onStart: () => Promise<void>;
 };
 
-export function PipelineScreen({ run, busy, onTogglePause, onGoReport, onStart }: PipelineScreenProps) {
+const AGENTS = [
+  { step: "01", id: "wernicke" as const, name: "Wernicke", role: "Comprehension", fallbackSummary: "Waiting to ingest transcript and patient record.", fallbackFooter: "queued" },
+  { step: "02", id: "norm" as const, name: "Norm", role: "Normative interpretation", fallbackSummary: "Waiting to interpret test battery against normative references.", fallbackFooter: "queued" },
+  { step: "03", id: "engram" as const, name: "Engram", role: "Evidence retrieval", fallbackSummary: "Waiting to retrieve same-patient history chunks.", fallbackFooter: "queued" },
+  { step: "04", id: "broca" as const, name: "Broca", role: "Drafting", fallbackSummary: "Waiting for upstream context before drafting sections.", fallbackFooter: "queued" },
+  { step: "05", id: "glia" as const, name: "Glia", role: "Quality assurance", fallbackSummary: "Waiting to QA the draft for consistency and uncertainty.", fallbackFooter: "queued" },
+];
+
+export function PipelineScreen({ run, draft, flags, busy, onTogglePause, onGoReport, onStart }: PipelineScreenProps) {
   const progress = run?.progress ?? 0;
-  const completeCount = Math.floor(progress / 20);
+  const completeCount = completedAgentCount(run);
   const paused = run?.phase === "paused";
   const complete = run?.phase === "complete";
+  const running = run?.phase === "running";
+  const tags = groundedTags(draft);
+  const timeline = activityTimeline(run);
   const stage = (index: number): AgentVariant => {
     if (completeCount > index || complete) return "done";
     if (completeCount === index && run && !paused) return "running";
@@ -109,60 +131,27 @@ export function PipelineScreen({ run, busy, onTogglePause, onGoReport, onStart }
       </div>
 
       <div className="flex items-stretch gap-0" style={{ marginBottom: "var(--space-7)" }}>
-        <AgentCard
-          step="01"
-          name="Wernicke"
-          role="Comprehension"
-          status={status(0)}
-          variant={stage(0)}
-          summary="Parsed 42:18 of dictation and 11 score sheets. Extracted chief complaint, 8‑month memory decline, preserved ADLs."
-          footer="1,840 tokens · 6s"
-        />
-        <Connector />
-        <AgentCard
-          step="02"
-          name="Norm"
-          role="Normative interpretation"
-          status={status(1)}
-          variant={stage(1)}
-          summary="Indexed 11 measures against age‑corrected norms. 4 fall ≥1 SD below expectation, concentrated in delayed memory."
-          footer="11 measures · 13s"
-        />
-        <Connector />
-        <AgentCard
-          step="03"
-          name="Engram"
-          role="Evidence retrieval"
-          status={status(2)}
-          variant={stage(2)}
-          summary="Retrieved 6 references — amnestic MCI criteria, WMS‑IV bands, AAN guideline — and aligned them to the score pattern."
-          footer="6 sources · 15s"
-        />
-        <Connector animated />
-        <AgentCard
-          step="04"
-          name="Broca"
-          role="Drafting"
-          status={status(3)}
-          variant={stage(3)}
-          summary={
-            <>
-              Composing the report. 4 of 6 sections complete; writing{" "}
-              <b style={{ color: "var(--cortex-blue)", fontWeight: 600 }}>Interpretation</b> now.
-            </>
-          }
-          footer="4 / 6 sections · 7s"
-        />
-        <Connector done={false} />
-        <AgentCard
-          step="05"
-          name="Glia"
-          role="Quality assurance"
-          status={status(4)}
-          variant={stage(4)}
-          summary="Waiting for the draft. Will verify consistency, completeness, and normative alignment, then surface anything uncertain."
-          footer="queued"
-        />
+        {AGENTS.flatMap((agent, index) => [
+          <AgentCard
+            key={agent.id}
+            step={agent.step}
+            name={agent.name}
+            role={agent.role}
+            status={status(index)}
+            variant={stage(index)}
+            summary={agentCardSummary(run, agent.id, agent.fallbackSummary)}
+            footer={agentCardFooter(run, agent.id, agent.fallbackFooter)}
+          />,
+          ...(index < AGENTS.length - 1
+            ? [
+                <Connector
+                  key={`${agent.id}-connector`}
+                  animated={index === 2 && stage(index) === "done"}
+                  done={index === 4 ? false : stage(index) === "done"}
+                />,
+              ]
+            : []),
+        ])}
       </div>
 
       <div className="flex items-stretch gap-[18px]">
@@ -181,7 +170,7 @@ export function PipelineScreen({ run, busy, onTogglePause, onGoReport, onStart }
           <div className="flex items-center gap-[9px]" style={{ padding: "var(--space-4) var(--space-5)", borderBottom: "1px solid var(--cortex-border-soft)" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--cortex-blue)", animation: "pulse-dot 1.3s infinite" }} />
             <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--cortex-ink-2)" }}>
-              {complete ? "Pipeline complete" : `${run?.currentAgent ?? "Band"} is working`}
+              {pipelineStatusLabel(run, complete, paused)}
             </span>
             <span className="font-mono" style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-ghost)" }}>
               · {paused ? "Paused" : complete ? "Review ready" : "Live orchestration"}
@@ -211,30 +200,30 @@ export function PipelineScreen({ run, busy, onTogglePause, onGoReport, onStart }
               flex: 1,
             }}
           >
-            Overall intellectual functioning falls within the Average range and is consistent with estimated premorbid ability. Against
-            this backdrop, performance is selectively reduced in episodic memory: delayed verbal recall fell in the Borderline range,
-            with limited benefit from recognition cueing — a pattern that points toward an encoding‑type amnestic process
-            <span
-              style={{
-                display: "inline-block",
-                width: 2,
-                height: 16,
-                background: "var(--cortex-blue)",
-                marginLeft: 2,
-                verticalAlign: -3,
-                animation: "blink 1s step-end infinite",
-              }}
-            />
+            {liveDraftPreview(draft, running && !complete)}
+            {running && !complete ? (
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 2,
+                  height: 16,
+                  background: "var(--cortex-blue)",
+                  marginLeft: 2,
+                  verticalAlign: -3,
+                  animation: "blink 1s step-end infinite",
+                }}
+              />
+            ) : null}
           </div>
           <div style={{ padding: "var(--space-4) var(--space-5)", borderTop: "1px solid var(--cortex-border-soft)", background: "var(--cortex-surface-muted)" }}>
             <div
               className="font-mono"
               style={{ fontSize: "var(--text-xs)", letterSpacing: "var(--tracking-mono-wide)", color: "var(--cortex-fg-ghost)", marginBottom: "var(--space-2)" }}
             >
-              GROUNDED ON — VIA ENGRAM
+              GROUNDED ON — NORM + ENGRAM
             </div>
             <div className="flex flex-wrap gap-[7px]">
-              {["Petersen — amnestic MCI criteria (2018)", "AAN dementia practice guideline", "WMS‑IV interpretive bands", "DSM‑5‑TR Mild NCD"].map(
+              {(tags.length > 0 ? tags : ["Normative and history retrieval will appear here"]).map(
                 (tag) => (
                   <span
                     key={tag}
@@ -252,6 +241,11 @@ export function PipelineScreen({ run, busy, onTogglePause, onGoReport, onStart }
                 )
               )}
             </div>
+            {complete && flags.length > 0 ? (
+              <div style={{ marginTop: 10, fontSize: "var(--text-xs)", color: "var(--cortex-warn)" }}>
+                Glia surfaced {flags.length} review {flags.length === 1 ? "flag" : "flags"}.
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -269,59 +263,20 @@ export function PipelineScreen({ run, busy, onTogglePause, onGoReport, onStart }
             Run activity
           </div>
           <div style={{ padding: "var(--space-1) var(--space-5) var(--space-4)" }}>
-            {[
-              { time: "00:00", text: "Session received — 42:18 audio, 11 score sheets", color: "var(--cortex-fg-muted)" },
-              {
-                time: "00:06",
-                text: (
-                  <>
-                    <b style={{ color: "var(--cortex-teal-dark)", fontWeight: 600 }}>Wernicke ✓</b> comprehension complete
-                  </>
-                ),
-                color: "var(--cortex-fg-muted)",
-              },
-              {
-                time: "00:19",
-                text: (
-                  <>
-                    <b style={{ color: "var(--cortex-teal-dark)", fontWeight: 600 }}>Norm ✓</b> 11 measures normed
-                  </>
-                ),
-                color: "var(--cortex-fg-muted)",
-              },
-              {
-                time: "00:34",
-                text: (
-                  <>
-                    <b style={{ color: "var(--cortex-teal-dark)", fontWeight: 600 }}>Engram ✓</b> 6 references retrieved
-                  </>
-                ),
-                color: "var(--cortex-fg-muted)",
-              },
-              {
-                time: "00:41",
-                text: (
-                  <>
-                    <b style={{ color: "var(--cortex-blue)", fontWeight: 600 }}>Broca ▶</b> drafting (4 / 6 sections)
-                  </>
-                ),
-                color: "var(--cortex-ink-3)",
-              },
-              { time: "—", text: "Glia queued — QA pending", color: "var(--cortex-fg-disabled)", last: true },
-            ].map((row) => (
+            {timeline.map((row, index) => (
               <div
-                key={row.time}
+                key={`${row.time}-${index}`}
                 className="flex gap-[11px]"
                 style={{
                   padding: "var(--space-2) 0",
-                  borderBottom: row.last ? "none" : "1px solid var(--cortex-border-soft)",
+                  borderBottom: index === timeline.length - 1 ? "none" : "1px solid var(--cortex-border-soft)",
                 }}
               >
                 <span
                   className="font-mono"
                   style={{
                     fontSize: "var(--text-xs)",
-                    color: row.time === "00:41" ? "var(--cortex-blue)" : row.time === "—" ? "var(--cortex-fg-disabled)" : "var(--cortex-fg-disabled)",
+                    color: "var(--cortex-fg-disabled)",
                     width: 38,
                     flex: "none",
                   }}

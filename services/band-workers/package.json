@@ -1,0 +1,22 @@
+{
+  "name": "cortex-band-workers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx run-all.ts",
+    "wernicke": "tsx agents/wernicke.ts",
+    "norm": "tsx agents/norm.ts",
+    "engram": "tsx agents/engram.ts",
+    "broca": "tsx agents/broca.ts",
+    "glia": "tsx agents/glia.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "@thenvoi/sdk": "^0.1.6",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

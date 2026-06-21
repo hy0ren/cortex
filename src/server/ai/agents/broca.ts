@@ -25,6 +25,7 @@ export type BrocaInput = {
   normativeInterpretation: string;
   patientName: string;
   referralReason: string;
+  engramEvidence?: Array<{ snippet: string; source: string }>;
 };
 
 export type BrocaOutput = {
@@ -50,6 +51,7 @@ export function buildBrocaUserMessage(input: BrocaInput): string {
       referralReason: input.referralReason,
       clinicalContext: input.clinicalContext,
       normativeInterpretation: input.normativeInterpretation,
+      engramEvidence: input.engramEvidence ?? [],
     },
     null,
     2

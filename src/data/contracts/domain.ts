@@ -70,6 +70,25 @@ export type AgentStatus = {
   phase: "idle" | "thinking" | "writing" | "reviewing" | "done" | "error";
   message: string;
   timestamp: string;
+  detail?: string;
+  metrics?: Record<string, string | number>;
+};
+
+export type HistoryChunk = {
+  id: string;
+  patientId: string;
+  source: "transcript" | "priorReport" | "priorEvaluation";
+  date?: string;
+  text: string;
+};
+
+export type NormativeChunk = {
+  id: string;
+  test?: string;
+  domain?: string;
+  ageBand?: string;
+  source: string;
+  text: string;
 };
 
 /** Shared room state for Band multi-agent collaboration. */
@@ -90,7 +109,18 @@ export type BandRoom = {
 };
 
 export type VectorSearchResult = {
+  chunkId: string;
   patientId: string;
   score: number;
   snippet: string;
+  source: HistoryChunk["source"];
+};
+
+export type NormativeSearchResult = {
+  chunkId: string;
+  score: number;
+  snippet: string;
+  source: string;
+  test?: string;
+  domain?: string;
 };

@@ -1,9 +1,12 @@
 "use client";
 
+import type { PatientRecord } from "@/data/contracts";
 import type { CortexScreen, NavStyle } from "../model/types";
+import { patientAgeAndSex, patientInitials } from "../model/history-view";
 import { CortexLogo } from "./icons";
 
 type SidebarProps = {
+  patient: PatientRecord | null;
   onNavigate: (screen: CortexScreen) => void;
   navStyle: (key: CortexScreen) => NavStyle;
 };
@@ -71,7 +74,10 @@ function NavItem({
   );
 }
 
-export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
+export function Sidebar({ patient, onNavigate, navStyle }: SidebarProps) {
+  const initials = patient ? patientInitials(patient.demographics.name) : "—";
+  const name = patient?.demographics.name ?? "No patient loaded";
+  const meta = patient ? patientAgeAndSex(patient) : "Select a session";
   return (
     <aside
       style={{
@@ -164,7 +170,7 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
                 flex: "none",
               }}
             >
-              EH
+              {initials}
             </div>
             <div style={{ minWidth: 0 }}>
               <div
@@ -177,7 +183,7 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
                   textOverflow: "ellipsis",
                 }}
               >
-                Eleanor M. Hayes
+                {name}
               </div>
               <div
                 style={{
@@ -187,7 +193,7 @@ export function Sidebar({ onNavigate, navStyle }: SidebarProps) {
                   marginTop: 1,
                 }}
               >
-                69F · MRN SYN‑4471
+                {meta}
               </div>
             </div>
           </div>

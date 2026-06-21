@@ -59,7 +59,22 @@ export function useCortexWorkspace(session: AuthSession) {
 
   useEffect(() => {
     if (!pipeline || pipeline.phase !== "running") return;
+    const bandMode = workspace?.capabilities.band === "configured" && Boolean(pipeline.bandRoomId);
+
     const timer = window.setInterval(() => {
+      if (bandMode) {
+        apiRequest<{ run: PipelineRun }>(`/api/pipeline/${pipeline.id}`)
+          .then(({ run }) => {
+            setPipeline(run);
+            if (run.phase === "complete") {
+              setMessage("Report generation complete. Glia review is ready.");
+              refreshWorkspace().catch(() => undefined);
+            }
+          })
+          .catch((error) => setMessage(error instanceof Error ? error.message : "Pipeline update failed"));
+        return;
+      }
+
       apiRequest<{ run: PipelineRun }>(`/api/pipeline/${pipeline.id}`, {
         method: "PATCH",
         body: JSON.stringify({ action: "advance" }),
@@ -74,7 +89,7 @@ export function useCortexWorkspace(session: AuthSession) {
         .catch((error) => setMessage(error instanceof Error ? error.message : "Pipeline update failed"));
     }, 1400);
     return () => window.clearInterval(timer);
-  }, [pipeline, refreshWorkspace]);
+  }, [pipeline, refreshWorkspace, workspace?.capabilities.band]);
 
   useEffect(() => {
     if (!listening || !VOICE_SUPPORTED) return;

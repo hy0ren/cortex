@@ -69,7 +69,34 @@ Add credentials incrementally. Cortex automatically switches each service from
 
 ```bash
 npm run seed:redis          # after REDIS_URL is configured
+npm run seed:norms          # normative RAG corpus for Norm
+npm run check:keys
 npm run typecheck
+```
+
+### Band remote agents
+
+Register five **External Agents** on [app.band.ai](https://app.band.ai). Copy each agent UUID and `band_a_*` key into `.env.local`. **You do not need to add an AI provider in the Band dashboard** — workers authenticate with `band_a_*` keys only; Cortex runs all Claude/TokenRouter inference.
+
+Set `BAND_AGENT_HANDLE_PREFIX` to your Band handle namespace (e.g. `dylancc5`) and generate a random `BAND_SYNC_SECRET`.
+
+Then run Cortex and the remote agent workers in separate terminals:
+
+```bash
+# Terminal 1 — Next.js app (creates Band rooms, executes pipeline steps)
+npm run dev
+
+# Terminal 2 — five Band remote agents (listen for @mentions, trigger Cortex)
+npm run band:workers
+```
+
+When Band is configured, the app creates a room via Wernicke's agent key and workers drive the pipeline through `@dylancc5/wernicke` → `@dylancc5/norm` → … handoffs.
+
+### Glia eval (Arize)
+
+```bash
+EVAL_VARIANT=glia-on GLIA_ENABLED=true npm run eval:glia
+EVAL_VARIANT=glia-off GLIA_ENABLED=false npm run eval:glia
 ```
 
 ### Seed Redis
@@ -79,7 +106,8 @@ npm run typecheck
 docker run -d -p 6379:6379 redis:7
 
 npm run seed:redis
-npm run seed:redis -- --clear   # wipe + re-seed
+npm run seed:norms
+npm run seed:redis -- --clear   # wipe + re-seed patients
 ```
 
 ### Synthetic patients

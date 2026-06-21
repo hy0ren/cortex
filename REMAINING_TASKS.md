@@ -35,9 +35,7 @@ Last audited: June 20, 2026.
 - [ ] Replace browser-driven pipeline advancement and in-memory run state with a
   durable queue/worker, idempotent steps, retry policy, cancellation, and
   restart recovery.
-- [ ] Run Wernicke, Norm, and Glia as real structured model calls. Today the
-  lifecycle and observability spans exist, Engram performs retrieval, and Broca
-  can generate content, but the other agent outputs remain deterministic.
+- [ ] Run Wernicke, Norm, and Glia as real structured model calls when `ANTHROPIC_API_KEY` is configured (demo fallback remains when unconfigured).
 - [ ] Add organization membership, patient-level authorization, clinician roles,
   and an admin/auditor role. Current ownership checks isolate drafts and runs by
   clinician, but there is no organization tenant model.

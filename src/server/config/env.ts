@@ -46,6 +46,32 @@ export type CortexEnv = {
   app: {
     url: string;
   };
+  embedding: {
+    provider: string;
+    model: string;
+    dims: number;
+  };
+  band: {
+    apiKey: string;
+    syncSecret: string;
+    restUrl: string;
+    wsUrl: string;
+    agentHandlePrefix: string;
+    wernickeAgentId: string;
+    wernickeApiKey: string;
+    normAgentId: string;
+    normApiKey: string;
+    engramAgentId: string;
+    engramApiKey: string;
+    brocaAgentId: string;
+    brocaApiKey: string;
+    gliaAgentId: string;
+    gliaApiKey: string;
+  };
+  glia: {
+    enabled: boolean;
+  };
+  evalVariant: string;
 };
 
 function optionalEnv(key: string, fallback = ""): string {
@@ -100,6 +126,32 @@ export function getEnv(): CortexEnv {
     app: {
       url: optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
     },
+    embedding: {
+      provider: optionalEnv("EMBEDDING_PROVIDER", "hash"),
+      model: optionalEnv("EMBEDDING_MODEL", "voyage-3-lite"),
+      dims: Number(optionalEnv("EMBEDDING_DIMS", "64")) || 64,
+    },
+    band: {
+      apiKey: optionalEnv("BAND_API_KEY"),
+      syncSecret: optionalEnv("BAND_SYNC_SECRET"),
+      restUrl: optionalEnv("THENVOI_REST_URL", "https://app.band.ai/api/v1/agent"),
+      wsUrl: optionalEnv("THENVOI_WS_URL", "wss://app.band.ai/api/v1/socket/websocket"),
+      agentHandlePrefix: optionalEnv("BAND_AGENT_HANDLE_PREFIX"),
+      wernickeAgentId: optionalEnv("BAND_WERNICKE_AGENT_ID"),
+      wernickeApiKey: optionalEnv("BAND_WERNICKE_API_KEY", optionalEnv("BAND_API_KEY")),
+      normAgentId: optionalEnv("BAND_NORM_AGENT_ID"),
+      normApiKey: optionalEnv("BAND_NORM_API_KEY", optionalEnv("BAND_API_KEY")),
+      engramAgentId: optionalEnv("BAND_ENGRAM_AGENT_ID"),
+      engramApiKey: optionalEnv("BAND_ENGRAM_API_KEY", optionalEnv("BAND_API_KEY")),
+      brocaAgentId: optionalEnv("BAND_BROCA_AGENT_ID"),
+      brocaApiKey: optionalEnv("BAND_BROCA_API_KEY", optionalEnv("BAND_API_KEY")),
+      gliaAgentId: optionalEnv("BAND_GLIA_AGENT_ID"),
+      gliaApiKey: optionalEnv("BAND_GLIA_API_KEY", optionalEnv("BAND_API_KEY")),
+    },
+    glia: {
+      enabled: optionalEnv("GLIA_ENABLED", "true") !== "false",
+    },
+    evalVariant: optionalEnv("EVAL_VARIANT", "glia-on"),
   };
 
   cached = env;

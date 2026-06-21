@@ -1,5 +1,6 @@
 import "server-only";
 import type { RuntimeCapabilities } from "@/data/contracts";
+import { isBandConfigured } from "@/server/band/room-client";
 
 function configured(value: string | undefined): "configured" | "demo" {
   return value && !value.includes("your-") ? "configured" : "demo";
@@ -31,5 +32,6 @@ export function getRuntimeCapabilities(): RuntimeCapabilities {
         ? "configured"
         : "demo",
     sentry: configured(process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN),
+    band: isBandConfigured() ? "configured" : "demo",
   };
 }

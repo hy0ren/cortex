@@ -302,15 +302,87 @@ async function checkSentryDsn() {
   }
 }
 
+async function checkNormativeCorpus() {
+  if (!hasConfiguredValue(process.env.REDIS_URL) &&
+      !(hasConfiguredValue(process.env.REDIS_CLOUD_ACCOUNT_KEY) &&
+        hasConfiguredValue(process.env.REDIS_CLOUD_SECRET_KEY))) {
+    record("Normative corpus", "skip", "Redis not configured");
+    return;
+  }
+
+  try {
+    const { countNormativeChunks, seedNormativeCorpus } = await import(
+      "@/server/persistence/redis"
+    );
+    let count = await countNormativeChunks();
+    if (count === 0) {
+      count = await seedNormativeCorpus();
+    }
+    record("Normative corpus", "ok", `${count} chunk(s) indexed`);
+  } catch (error) {
+    record(
+      "Normative corpus",
+      "fail",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
+async function checkBand() {
+  const hasAnyBand =
+    hasConfiguredValue(process.env.BAND_WERNICKE_AGENT_ID) ||
+    hasConfiguredValue(process.env.BAND_API_KEY);
+  if (!hasAnyBand) {
+    record("Band", "skip", "Band credentials not set");
+    return;
+  }
+
+  try {
+    const { isBandConfigured } = await import("@/server/band/room-client");
+    if (!isBandConfigured()) {
+      record("Band", "fail", "Remote agent ids/keys or BAND_SYNC_SECRET incomplete");
+      return;
+    }
+
+    const restUrl = process.env.THENVOI_REST_URL ?? "https://app.band.ai/api/v1/agent";
+    const wernickeKey =
+      process.env.BAND_WERNICKE_API_KEY ?? process.env.BAND_API_KEY ?? "";
+    const response = await fetch(`${restUrl.replace(/\/$/, "")}/me`, {
+      headers: { "X-API-Key": wernickeKey, Accept: "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (response.ok) {
+      const profile = (await response.json()) as { handle?: string; name?: string };
+      record(
+        "Band",
+        "ok",
+        `remote agents configured${profile.handle ? ` (@${profile.handle})` : ""}`
+      );
+      return;
+    }
+
+    record(
+      "Band",
+      "fail",
+      `Wernicke agent auth failed (${response.status}) — check BAND_WERNICKE_API_KEY`
+    );
+  } catch (error) {
+    record("Band", "fail", error instanceof Error ? error.message : String(error));
+  }
+}
+
 async function main() {
   await checkAnthropic();
   await checkDeepgram();
   await checkRedis();
+  await checkNormativeCorpus();
   await checkFirebaseClient();
   await checkFirebaseAdmin();
   await checkAgentTracing();
   await checkSentryAuthToken();
   await checkSentryDsn();
+  await checkBand();
 
   console.log("\nAPI key check results:\n");
   for (const { name, status, detail } of results) {

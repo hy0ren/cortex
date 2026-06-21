@@ -217,6 +217,7 @@ export async function runGliaStep(input: {
   clinicalContext: string;
   normativeInterpretation: string;
   sourceTranscript: string;
+  retrievedEvidence?: Array<{ snippet: string; source: string }>;
 }): Promise<{ raw: string; output: GliaOutput | null }> {
   const message = buildGliaUserMessage(input);
   const raw = await completeWithClaude({

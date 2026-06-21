@@ -204,6 +204,10 @@ async function evaluateCase(patient: PatientRecord, encounter: Encounter, round:
     clinicalContext,
     normativeInterpretation,
     sourceTranscript: encounter.transcript,
+    retrievedEvidence: engramEvidence.map((item) => ({
+      snippet: item.snippet,
+      source: item.source,
+    })),
   };
   const glia = await withAgentSpan(
     "cortex.eval.glia",

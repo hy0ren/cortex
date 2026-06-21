@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type ChangeEvent } from "react";
+import { useCallback } from "react";
 import type { GliaFlag, PatientRecord, ReportDraft, Encounter, TestScore } from "@/data/contracts";
 import { flagStyle } from "@/data/demo/cortex";
 import { CheckIcon } from "../components/icons";
@@ -18,6 +18,24 @@ type ReportScreenProps = {
   onFinalize: () => Promise<void>;
   onSaveSections: (sections: Record<string, string>) => Promise<void>;
 };
+
+const PRINT_STYLES = `
+@media print {
+  body * { visibility: hidden !important; }
+  [data-report-document], [data-report-document] * { visibility: visible !important; }
+  [data-report-document] {
+    position: fixed !important;
+    top: 0; left: 0; right: 0;
+    width: 100% !important;
+    max-width: 860px !important;
+    margin: 0 auto !important;
+    padding: 48px 64px 72px !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  @page { margin: 0.75in; }
+}`;
 
 function classificationStyle(warn?: boolean, alert?: boolean) {
   if (alert) return { color: "var(--cortex-alert)", bg: "var(--cortex-alert-bg)" };
@@ -71,31 +89,20 @@ export function ReportScreen({
   onResolveFlag,
   onOpenExplain,
   onFinalize,
-  onSaveSections,
+  onSaveSections: _onSaveSections,
 }: ReportScreenProps) {
   const status = draft.status;
   const age = Math.max(0, new Date().getFullYear() - new Date(patient.demographics.dateOfBirth).getFullYear());
   const flagsBySection = (section: string) => flags.filter((f) => f.section === section);
+  const sections = draft.sections ?? {};
 
-  const [sections, setSections] = useState<Record<string, string>>(draft.sections ?? {});
-  const [savingSection, setSavingSection] = useState(false);
-
-  const handleSectionBlur = useCallback(async () => {
-    setSavingSection(true);
-    try {
-      await onSaveSections(sections);
-    } finally {
-      setSavingSection(false);
-    }
-  }, [onSaveSections, sections]);
-
-  function editableSection(key: string) {
-    return {
-      value: sections[key] ?? "",
-      onChange: (e: ChangeEvent<HTMLTextAreaElement>) =>
-        setSections((prev) => ({ ...prev, [key]: e.target.value })),
-    };
-  }
+  const handlePrint = useCallback(() => {
+    const style = document.createElement("style");
+    style.textContent = PRINT_STYLES;
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(() => document.head.removeChild(style), 1000);
+  }, []);
 
   return (
     <div className="sa" style={{ flex: 1, overflowY: "auto", background: "var(--cortex-canvas)" }}>
@@ -121,9 +128,6 @@ export function ReportScreen({
             <Badge variant={status === "finalized" ? "verify" : "warn"} className="rounded-full border px-2.5 py-0.5">
               {status === "finalized" ? "Final" : "Draft"}
             </Badge>
-          </div>
-          <div style={{ fontSize: "var(--text-xs)", color: "var(--cortex-fg-faint)", marginTop: 3 }}>
-            {savingSection ? "Saving…" : "Last edited just now · autosaved"}
           </div>
         </div>
         <div className="flex items-center gap-2.5" style={{ marginLeft: "auto" }}>
@@ -151,6 +155,19 @@ export function ReportScreen({
               <path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14" />
             </svg>
             Explain to patient
+          </Button>
+          <Button
+            type="button"
+            variant="cortex-secondary"
+            size="default"
+            onClick={handlePrint}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9V2h12v7" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            Download PDF
           </Button>
           <Button
             type="button"
@@ -192,7 +209,7 @@ export function ReportScreen({
                 className="font-mono uppercase"
                 style={{ fontSize: "var(--text-xs)", letterSpacing: "var(--tracking-mono-wide)", color: "var(--cortex-fg-ghost)" }}
               >
-                Confidential · Synthetic record
+                Confidential
               </div>
               <h2
                 className="font-serif"
@@ -223,31 +240,20 @@ export function ReportScreen({
                 style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}
               >
                 {section.title}
-              </h3>
-              <div style={{ position: "relative" }}>
-                <textarea
-                  className="font-serif"
-                  {...editableSection(section.sectionKey)}
-                  style={{
-                    width: "100%",
-                    minHeight: 100,
-                    resize: "vertical",
-                    background: "transparent",
-                    border: "none",
-                    borderBottom: "1px dashed transparent",
-                    outline: "none",
-                    fontSize: "var(--text-md)",
-                    lineHeight: 1.74,
-                    color: "var(--cortex-ink-3)",
-                    fontFamily: "inherit",
-                    padding: 0,
-                    cursor: "text",
-                  }}
-                  onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--cortex-border-stronger)"; }}
-                  onBlur={(e) => { e.currentTarget.style.borderBottomColor = "transparent"; void handleSectionBlur(); }}
-                />
                 <FlagMarkers flags={flagsBySection(section.flagKey)} />
-              </div>
+              </h3>
+              <p
+                className="font-serif"
+                style={{
+                  margin: 0,
+                  fontSize: "var(--text-md)",
+                  lineHeight: 1.74,
+                  color: "var(--cortex-ink-3)",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {sections[section.sectionKey] || <span style={{ color: "var(--cortex-fg-ghost)", fontStyle: "italic" }}>No content yet — run the pipeline to generate this section.</span>}
+              </p>
             </section>
           ))}
 
@@ -358,59 +364,27 @@ export function ReportScreen({
           <section style={{ marginBottom: "var(--space-7)" }}>
             <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}>
               Interpretation
-            </h3>
-            <div style={{ position: "relative" }}>
-              <textarea
-                className="font-serif"
-                {...editableSection("interpretation")}
-                style={{
-                  width: "100%",
-                  minHeight: 100,
-                  resize: "vertical",
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: "1px dashed transparent",
-                  outline: "none",
-                  fontSize: "var(--text-md)",
-                  lineHeight: 1.74,
-                  color: "var(--cortex-ink-3)",
-                  fontFamily: "inherit",
-                  padding: 0,
-                }}
-                onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--cortex-border-stronger)"; }}
-                onBlur={(e) => { e.currentTarget.style.borderBottomColor = "transparent"; void handleSectionBlur(); }}
-              />
               <FlagMarkers flags={flagsBySection("Interpretation")} />
-            </div>
+            </h3>
+            <p
+              className="font-serif"
+              style={{ margin: 0, fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", whiteSpace: "pre-wrap" }}
+            >
+              {sections["interpretation"] || <span style={{ color: "var(--cortex-fg-ghost)", fontStyle: "italic" }}>No content yet — run the pipeline to generate this section.</span>}
+            </p>
           </section>
 
           <section>
             <h3 className="font-serif" style={{ fontSize: "var(--text-xl)", fontWeight: 600, color: "var(--cortex-teal-dark)", margin: "0 0 var(--space-3)", letterSpacing: "-.005em" }}>
-              Summary & Recommendations
-            </h3>
-            <div style={{ position: "relative", marginBottom: "var(--space-3)" }}>
-              <textarea
-                className="font-serif"
-                {...editableSection("summary")}
-                style={{
-                  width: "100%",
-                  minHeight: 80,
-                  resize: "vertical",
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: "1px dashed transparent",
-                  outline: "none",
-                  fontSize: "var(--text-md)",
-                  lineHeight: 1.74,
-                  color: "var(--cortex-ink-3)",
-                  fontFamily: "inherit",
-                  padding: 0,
-                }}
-                onFocus={(e) => { e.currentTarget.style.borderBottomColor = "var(--cortex-border-stronger)"; }}
-                onBlur={(e) => { e.currentTarget.style.borderBottomColor = "transparent"; void handleSectionBlur(); }}
-              />
+              Summary &amp; Recommendations
               <FlagMarkers flags={flagsBySection("Summary")} />
-            </div>
+            </h3>
+            <p
+              className="font-serif"
+              style={{ margin: "0 0 var(--space-4)", fontSize: "var(--text-md)", lineHeight: 1.74, color: "var(--cortex-ink-3)", whiteSpace: "pre-wrap" }}
+            >
+              {sections["summary"] || <span style={{ color: "var(--cortex-fg-ghost)", fontStyle: "italic" }}>No content yet — run the pipeline to generate this section.</span>}
+            </p>
             <ol className="font-serif" style={{ fontSize: "var(--text-md)", lineHeight: 1.7, color: "var(--cortex-ink-3)", margin: 0, paddingLeft: 20 }}>
               {[
                 "Neurology follow‑up with consideration of structural MRI and biomarker assessment.",

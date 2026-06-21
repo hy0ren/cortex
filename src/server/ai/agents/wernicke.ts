@@ -18,6 +18,9 @@ Rules:
 - Use only information present in the provided data. Do not invent history.
 - Do not calculate or state the patient's age from date of birth. Only state an
   age when it is explicitly supplied in the source material.
+- Make clinicalContext a comprehensive downstream handoff. It must include all
+  supported behavioral observations and functional-impact details that could
+  be relevant to report drafting, not only the referral and medical history.
 - Flag gaps or ambiguities explicitly under "uncertainties".
 - Write in third-person clinical prose.
 - Output raw valid JSON matching the schema provided.

@@ -242,31 +242,12 @@ export function Sidebar({ patient, encounter, onNavigate, navStyle, user, onSwit
       </div>
 
       <div style={{ marginTop: "auto", padding: "var(--space-4) var(--space-4)", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 11px",
-            borderRadius: "var(--radius-sm)",
-            background: "rgba(14,156,137,0.12)",
-            border: "1px solid rgba(14,156,137,0.28)",
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fbfac" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="5" y="11" width="14" height="9" rx="2" />
-            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-          </svg>
-          <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "#5ccdbb" }}>Synthetic data · No PHI</span>
-        </div>
+
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 10,
-            marginTop: "var(--space-4)",
-            paddingTop: "var(--space-3)",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
           }}
         >
           <div

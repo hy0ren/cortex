@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, LogIn } from "lucide-react";
+import { FolderOpen, LogIn } from "lucide-react";
 import type { RuntimeCapabilities } from "@/data/contracts";
 import { CortexLogo } from "@/client/features/cortex/components/icons";
 import { Button } from "@/client/components/ui/button";
@@ -117,7 +117,7 @@ export function LoginPage({
                   letterSpacing: "var(--tracking-mono-wide)",
                 }}
               >
-                SYNTHETIC DEMO
+                GUEST ACCESS
               </span>
               <span style={{ height: 1, flex: 1, background: "var(--cortex-border)" }} />
             </div>
@@ -129,8 +129,8 @@ export function LoginPage({
               onClick={() => void onEnterDemo()}
               style={{ width: "100%", height: 44 }}
             >
-              <FlaskConical aria-hidden="true" />
-              Enter demo workspace
+              <FolderOpen aria-hidden="true" />
+              Explore as Guest Clinician
             </Button>
             <p
               style={{
@@ -141,7 +141,7 @@ export function LoginPage({
                 textAlign: "center",
               }}
             >
-              Uses synthetic patient records only. No Google account required.
+              Experience the complete workspace offline. No Google account required.
             </p>
           </>
         )}

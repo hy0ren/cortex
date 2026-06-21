@@ -204,11 +204,18 @@ export async function executePipelineAgent(
           if (isGliaEnabled() && anthropicReady) {
             const wernickeNote = parseAgentJson<WernickeOutput>(latestDraft.agentNotes.wernicke ?? "");
             const normNote = parseAgentJson<NormOutput>(latestDraft.agentNotes.norm ?? "");
+            const engramEvidence = JSON.parse(
+              latestDraft.agentNotes.engramEvidence ?? "[]"
+            ) as Array<{ snippet: string; source: string }>;
             const reviewInput = {
               draftSections: latestDraft.sections,
               clinicalContext: wernickeNote?.clinicalContext ?? encounter.transcript,
               normativeInterpretation: normNote?.overallProfile ?? "",
               sourceTranscript: encounter.transcript,
+              retrievedEvidence: engramEvidence.map((item) => ({
+                snippet: item.snippet,
+                source: item.source,
+              })),
             };
             const { raw, output } = await runGliaStep(reviewInput);
             recordGeneration(buildGliaUserMessage(reviewInput), raw);

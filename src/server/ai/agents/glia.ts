@@ -27,6 +27,7 @@ export type GliaInput = {
   clinicalContext: string;
   normativeInterpretation: string;
   sourceTranscript: string;
+  retrievedEvidence?: Array<{ snippet: string; source: string }>;
 };
 
 export type QaFlag = {
@@ -65,6 +66,7 @@ export function buildGliaUserMessage(input: GliaInput): string {
       clinicalContext: input.clinicalContext,
       normativeInterpretation: input.normativeInterpretation,
       sourceTranscript: input.sourceTranscript,
+      retrievedEvidence: input.retrievedEvidence ?? [],
     },
     null,
     2

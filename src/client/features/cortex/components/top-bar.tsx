@@ -87,22 +87,7 @@ export function TopBar({ listening, voiceSupported, onToggleListen, onExport, on
             </svg>
             Hands‑free
           </div>
-          <div
-            className="flex items-center gap-1.5"
-            style={{
-              height: 34,
-              padding: "0 var(--space-3)",
-              borderRadius: "var(--radius-md)",
-              background: "var(--cortex-surface)",
-              border: "1px solid var(--cortex-border)",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              color: "var(--cortex-teal-dark)",
-            }}
-          >
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--cortex-teal)" }} />
-            Synthetic data mode
-          </div>
+
           <Button type="button" variant="cortex-secondary" size="icon" onClick={onExport} aria-label="Export report">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />

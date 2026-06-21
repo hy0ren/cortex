@@ -14,6 +14,7 @@ export function CortexRoot() {
         loading={auth.loading}
         error={auth.error}
         onSignIn={auth.signIn}
+        onRegister={auth.register}
       />
     );
   }

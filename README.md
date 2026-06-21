@@ -61,6 +61,7 @@ npm run dev
 The app is usable before credentials are added:
 
 - Sign in with any valid email and a password of at least 6 characters.
+- Create a development account with a name, email, and 8+ character password.
 - Sessions, drafts, pipeline state, and uploads use an in-memory development store.
 - Synthetic patient records and deterministic report content remain behind the same APIs used in configured mode.
 
@@ -122,6 +123,7 @@ See [`.env.example`](.env.example) for all required keys:
 |-------|---------|
 | `GET /api/health` | Runtime capability and readiness check |
 | `GET/POST/DELETE /api/auth/session` | Cookie-backed clinician sessions |
+| `POST /api/auth/register` | Firebase or development account registration |
 | `GET /api/patients` | Patient index (Redis with fixture fallback) |
 | `GET /api/patients/:id` | Patient record |
 | `GET /api/workspace` | Patient, draft, QA, pipeline, and capability state |

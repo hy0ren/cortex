@@ -1,5 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp, type FirebaseOptions } from "firebase/app";
-import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+import type { Analytics } from "firebase/analytics";
 import { getAuth, type Auth } from "firebase/auth";
 import {
   isPublicFirebaseConfigured,
@@ -53,7 +53,8 @@ export async function getFirebaseAnalytics(): Promise<Analytics | null> {
   }
   if (analytics) return analytics;
   if (!analyticsInit) {
-    analyticsInit = isSupported().then((supported) => {
+    analyticsInit = import("firebase/analytics").then(async ({ getAnalytics, isSupported }) => {
+      const supported = await isSupported();
       if (!supported) return null;
       analytics = getAnalytics(getFirebaseApp());
       return analytics;

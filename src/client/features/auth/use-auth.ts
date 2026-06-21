@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
 import type { AuthSession, RuntimeCapabilities } from "@/data/contracts";
 import { apiRequest } from "@/client/lib/api-client";
 import { getFirebaseAuth } from "@/client/lib/firebase";
@@ -53,5 +57,37 @@ export function useAuth() {
     setSession(null);
   }, []);
 
-  return { session, capabilities, loading, error, signIn, signOut };
+  const register = useCallback(async (
+    displayName: string,
+    email: string,
+    password: string
+  ) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let idToken: string | undefined;
+      if (capabilities?.firebase === "configured") {
+        const credential = await createUserWithEmailAndPassword(
+          getFirebaseAuth(),
+          email,
+          password
+        );
+        await updateProfile(credential.user, { displayName });
+        idToken = await credential.user.getIdToken(true);
+      }
+      const result = await apiRequest<{ session: AuthSession }>("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ displayName, email, password, idToken }),
+      });
+      setSession(result.session);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Unable to create account";
+      setError(message);
+      throw cause;
+    } finally {
+      setLoading(false);
+    }
+  }, [capabilities]);
+
+  return { session, capabilities, loading, error, signIn, register, signOut };
 }

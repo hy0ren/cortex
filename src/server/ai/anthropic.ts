@@ -4,12 +4,17 @@ import { getEnv, requireEnvValue } from "@/server/config/env";
 
 let client: Anthropic | null = null;
 
+/** The SDK appends /v1/messages itself — strip a trailing /v1 so proxies like TokenRouter that already include it in their base URL don't end up double-pathed. */
+function normalizeBaseUrl(baseUrl: string): string {
+  return baseUrl.replace(/\/v1\/?$/, "");
+}
+
 export function getAnthropicClient(): Anthropic {
   if (!client) {
     const { anthropic } = getEnv();
     client = new Anthropic({
       apiKey: requireEnvValue(anthropic.apiKey, "ANTHROPIC_API_KEY"),
-      ...(anthropic.baseUrl && { baseURL: anthropic.baseUrl }),
+      ...(anthropic.baseUrl && { baseURL: normalizeBaseUrl(anthropic.baseUrl) }),
     });
   }
   return client;

@@ -31,13 +31,23 @@ import type { PatientRecord } from "@/data/contracts";
 
 const AGENT_SEQUENCE = ["wernicke", "norm", "engram", "broca", "glia"] as const;
 
-/** Broca's canonical section keys, mapped to the report screen's display section keys (used to anchor Glia flags). */
+/**
+ * Glia is given draftSections keyed by the report screen's own section keys
+ * (reasonForReferral, history, behavioralObservations, interpretation, summary)
+ * but sometimes echoes back Broca's original canonical section names instead —
+ * map both forms to the report screen's display section keys.
+ */
 const SECTION_KEY_MAP: Record<string, string> = {
   "REASON FOR REFERRAL": "Reason for Referral",
+  REASONFORREFERRAL: "Reason for Referral",
   "BACKGROUND AND HISTORY": "History",
+  HISTORY: "History",
   "BEHAVIORAL OBSERVATIONS": "Behavioral Observations",
+  BEHAVIORALOBSERVATIONS: "Behavioral Observations",
   "TEST RESULTS AND INTERPRETATION": "Interpretation",
+  INTERPRETATION: "Interpretation",
   "SUMMARY AND IMPRESSIONS": "Summary",
+  SUMMARY: "Summary",
   RECOMMENDATIONS: "Summary",
 };
 

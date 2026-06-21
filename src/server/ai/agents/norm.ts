@@ -17,7 +17,8 @@ Rules:
 - Reference specific tests and scores from the provided battery only.
 - Do not diagnose — describe patterns and hypotheses for the clinician.
 - Flag scores that appear inconsistent with the clinical picture.
-- Output valid JSON matching the schema provided.`;
+- Output raw valid JSON matching the schema provided.
+- Do not wrap the JSON in markdown code fences or add commentary outside it.`;
 
 export type NormInput = {
   patient: PatientRecord;

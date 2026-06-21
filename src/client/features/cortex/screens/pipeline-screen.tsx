@@ -200,7 +200,7 @@ export function PipelineScreen({ run, draft, flags, busy, onTogglePause, onGoRep
               flex: 1,
             }}
           >
-            {liveDraftPreview(draft, running && !complete)}
+            {liveDraftPreview(draft, running && !complete, run)}
             {running && !complete ? (
               <span
                 style={{

@@ -16,9 +16,12 @@ Extract and organize:
 
 Rules:
 - Use only information present in the provided data. Do not invent history.
+- Do not calculate or state the patient's age from date of birth. Only state an
+  age when it is explicitly supplied in the source material.
 - Flag gaps or ambiguities explicitly under "uncertainties".
 - Write in third-person clinical prose.
-- Output valid JSON matching the schema provided.`;
+- Output raw valid JSON matching the schema provided.
+- Do not wrap the JSON in markdown code fences or add commentary outside it.`;
 
 export type WernickeInput = {
   patient: PatientRecord;

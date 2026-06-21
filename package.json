@@ -12,6 +12,7 @@
     "seed:redis": "node --conditions=react-server --import tsx scripts/seed-redis.ts",
     "seed:norms": "node --conditions=react-server --import tsx scripts/seed-normative-redis.ts",
     "eval:glia": "node --conditions=react-server --import tsx scripts/run-glia-eval.ts",
+    "eval:arize": "node --conditions=react-server --import tsx scripts/run-arize-bulk-eval.ts",
     "band:workers": "cd services/band-workers && npm install && npm start",
     "check:keys": "node --conditions=react-server --import tsx scripts/check-api-keys.ts",
     "check:production-env": "node --import tsx scripts/validate-production-env.ts",

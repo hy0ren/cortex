@@ -142,9 +142,14 @@ export function recordGeneration(
   span.setAttributes({
     "llm.input_length": input.length,
     "llm.output_length": output.length,
+    "openinference.span.kind": "LLM",
+    "input.mime_type": "application/json",
+    "output.mime_type": "application/json",
     ...(arize.captureContent && {
       "llm.input": input.slice(0, 2000),
       "llm.output": output.slice(0, 2000),
+      "input.value": input.slice(0, 2000),
+      "output.value": output.slice(0, 2000),
     }),
     ...(meta?.latencyMs !== undefined && { "llm.latency_ms": meta.latencyMs }),
     ...(meta?.promptTokens !== undefined && { "llm.prompt_tokens": meta.promptTokens }),

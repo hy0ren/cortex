@@ -18,7 +18,8 @@ Rules:
 - Recommendations must be specific, actionable, and tied to findings.
 - Mark any section where evidence is thin with [NEEDS CLINICIAN REVIEW].
 - Do not fabricate test scores or history.
-- Output valid JSON with section keys matching the list above.`;
+- Output raw valid JSON with section keys matching the list above.
+- Do not wrap the JSON in markdown code fences or add commentary outside it.`;
 
 export type BrocaInput = {
   clinicalContext: string;

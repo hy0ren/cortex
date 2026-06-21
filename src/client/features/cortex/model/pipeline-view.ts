@@ -54,10 +54,25 @@ export function activityTimeline(run: PipelineRun | null): Array<{
   }));
 }
 
-export function liveDraftPreview(draft: ReportDraft | null, running: boolean): string {
+const AGENT_MESSAGES: Partial<Record<AgentId, string>> = {
+  wernicke: "Wernicke is comprehending the transcript…",
+  norm: "Norm is interpreting the test battery…",
+  engram: "Engram is retrieving history…",
+  broca: "Broca is composing the report…",
+  glia: "Glia is reviewing the draft…",
+};
+
+export function liveDraftPreview(
+  draft: ReportDraft | null,
+  running: boolean,
+  run?: PipelineRun | null
+): string {
+  const currentAgent = run?.currentAgent as AgentId | undefined;
+  const agentMessage = currentAgent ? AGENT_MESSAGES[currentAgent] : null;
+
   if (!draft) {
     return running
-      ? "Draft sections will appear here as Broca completes."
+      ? (agentMessage ?? "Wernicke is comprehending the transcript…")
       : "Start the pipeline to generate a live draft preview.";
   }
 
@@ -69,7 +84,7 @@ export function liveDraftPreview(draft: ReportDraft | null, running: boolean): s
     Object.values(draft.sections).find(Boolean) ||
     "";
 
-  return section || (running ? "Broca is composing the report…" : "No draft content yet.");
+  return section || (running ? (agentMessage ?? "Broca is composing the report…") : "No draft content yet.");
 }
 
 export function groundedTags(draft: ReportDraft | null): string[] {

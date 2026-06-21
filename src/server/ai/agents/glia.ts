@@ -19,7 +19,8 @@ Severity levels:
 
 Rules:
 - Compare every claim in the draft to the provided source materials.
-- Output valid JSON matching the schema provided.`;
+- Output raw valid JSON matching the schema provided.
+- Do not wrap the JSON in markdown code fences or add commentary outside it.`;
 
 export type GliaInput = {
   draftSections: Record<string, string>;

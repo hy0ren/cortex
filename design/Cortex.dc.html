@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;background:#F5F6F8;color:#101a27;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:#CFEBE6}
+@keyframes flow{from{background-position:-30% 0}to{background-position:130% 0}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.78)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(47,91,208,.28)}70%{box-shadow:0 0 0 9px rgba(47,91,208,0)}100%{box-shadow:0 0 0 0 rgba(47,91,208,0)}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes wave{0%,100%{transform:scaleY(.30)}50%{transform:scaleY(1)}}
+@keyframes dots{0%{opacity:.25}50%{opacity:1}100%{opacity:.25}}
+.sa::-webkit-scrollbar{width:11px;height:11px}
+.sa::-webkit-scrollbar-thumb{background:#D7DCE4;border-radius:7px;border:3px solid transparent;background-clip:padding-box}
+.sa::-webkit-scrollbar-thumb:hover{background:#C2C9D4;background-clip:padding-box}
+</style>
+</helmet>
+
+<div style="display:flex;height:100vh;width:100%;overflow:hidden;background:#F5F6F8">
+
+  <!-- ===================== LEFT NAV RAIL ===================== -->
+  <aside style="width:244px;flex:none;background:#0B1220;display:flex;flex-direction:column;color:#C9D2DE">
+    <div style="padding:22px 20px 18px;display:flex;align-items:center;gap:11px">
+      <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(140deg,#0E9C89,#2F5BD0);display:flex;align-items:center;justify-content:center;flex:none">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="7" r="2.4" fill="#fff"/><circle cx="18" cy="6" r="2.1" fill="#fff" opacity=".85"/><circle cx="12" cy="13" r="2.4" fill="#fff"/><circle cx="7" cy="19" r="2.1" fill="#fff" opacity=".7"/><circle cx="18" cy="17" r="2.1" fill="#fff" opacity=".85"/><path d="M6 7 12 13M18 6 12 13M12 13 7 19M12 13 18 17" stroke="#fff" stroke-width="1.2" opacity=".55"/></svg>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:-.01em;color:#fff;line-height:1">Cortex</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;color:#5E6B7E;margin-top:3px">NEUROPSYCH COPILOT</div>
+      </div>
+    </div>
+
+    <div style="padding:6px 12px;display:flex;flex-direction:column;gap:2px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:#4B576A;padding:12px 12px 7px">WORKSPACE</div>
+
+      <div onClick="{{ goIntake }}" style="position:relative;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;color:#909BAA;background:{{ navIntake.bg }};color:{{ navIntake.col }}" style-hover="background:rgba(255,255,255,0.05)">
+        <span style="position:absolute;left:0;top:8px;bottom:8px;width:2.5px;border-radius:2px;background:{{ navIntake.bar }}"></span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        New session
+      </div>
+
+      <div onClick="{{ goPipeline }}" style="position:relative;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;color:#909BAA;background:{{ navPipe.bg }};color:{{ navPipe.col }}" style-hover="background:rgba(255,255,255,0.05)">
+        <span style="position:absolute;left:0;top:8px;bottom:8px;width:2.5px;border-radius:2px;background:{{ navPipe.bar }}"></span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/><path d="M8 11 16 7M8 13l8 4"/></svg>
+        Pipeline
+        <span style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#2F5BD0;animation:pulse 1.4s ease-in-out infinite"></span>
+      </div>
+
+      <div onClick="{{ goReport }}" style="position:relative;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;color:#909BAA;background:{{ navReport.bg }};color:{{ navReport.col }}" style-hover="background:rgba(255,255,255,0.05)">
+        <span style="position:absolute;left:0;top:8px;bottom:8px;width:2.5px;border-radius:2px;background:{{ navReport.bar }}"></span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>
+        Report editor
+      </div>
+
+      <div onClick="{{ goHistory }}" style="position:relative;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;color:#909BAA;background:{{ navHistory.bg }};color:{{ navHistory.col }}" style-hover="background:rgba(255,255,255,0.05)">
+        <span style="position:absolute;left:0;top:8px;bottom:8px;width:2.5px;border-radius:2px;background:{{ navHistory.bar }}"></span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>
+        Patient history
+      </div>
+    </div>
+
+    <div style="margin-top:18px;padding:0 12px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.13em;color:#4B576A;padding:8px 12px 9px">ACTIVE PATIENT</div>
+      <div style="padding:11px 12px;border-radius:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:30px;height:30px;border-radius:50%;background:#1C2738;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#9FC9C2;flex:none">EH</div>
+          <div style="min-width:0">
+            <div style="font-size:13px;font-weight:600;color:#E7ECF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Eleanor M. Hayes</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6B7789;margin-top:1px">69F · MRN SYN‑4471</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,0.07)">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:rgba(14,156,137,0.10);border:1px solid rgba(14,156,137,0.22)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3FBFAC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <span style="font-size:11px;font-weight:600;color:#5CCDBB">Synthetic data · No PHI</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:9px;padding:0 4px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5E6B7E" stroke-width="2" stroke-linecap="round"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg>
+        <span style="font-size:10.5px;color:#6B7789">PHI de‑identified on‑device</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,0.06)">
+        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(140deg,#3C4A60,#1C2738);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;color:#C9D2DE;flex:none">LO</div>
+        <div style="min-width:0;line-height:1.25">
+          <div style="font-size:12px;font-weight:600;color:#D6DCE5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dr. Lena Okafor</div>
+          <div style="font-size:10px;color:#6B7789">Clinical Neuropsychologist</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main style="flex:1;display:flex;flex-direction:column;min-width:0;background:#F5F6F8">
+
+    <!-- TOP BAR -->
+    <header style="height:58px;flex:none;background:rgba(245,246,248,0.86);backdrop-filter:blur(8px);border-bottom:1px solid #E5E8ED;display:flex;align-items:center;padding:0 24px;gap:16px">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div style="width:26px;height:26px;border-radius:50%;background:#E3EDF0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0B7E70;flex:none">EH</div>
+        <div style="font-size:14px;font-weight:600;color:#1b2735">Eleanor M. Hayes</div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A95A3">·</span>
+        <span style="font-size:13px;color:#647082">Comprehensive Neuropsychological Evaluation</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6B0BD;margin-left:2px">18 Jun 2026</span>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+        <div onClick="{{ toggleListen }}" style="display:flex;align-items:center;gap:8px;height:34px;padding:0 13px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;border:1px solid #DCE0E7;background:{{ listenBg }};color:{{ listenCol }}" style-hover="border-color:#0E9C89">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          Hands‑free
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:8px;background:#fff;border:1px solid #E5E8ED;font-size:12px;font-weight:600;color:#0B7E70">
+          <span style="width:7px;height:7px;border-radius:50%;background:#0E9C89"></span>HIPAA‑safe mode
+        </div>
+        <button style="width:34px;height:34px;border-radius:8px;border:1px solid #E5E8ED;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#5A6675" style-hover="background:#F0F2F5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button>
+      </div>
+    </header>
+
+    <!-- listening bar -->
+    <sc-if value="{{ listening }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;background:#062E29;color:#9FE3D7;display:flex;align-items:center;gap:12px;padding:9px 24px;font-size:12.5px">
+        <span style="display:inline-flex;gap:3px">
+          <span style="width:4px;height:4px;border-radius:50%;background:#43C9B4;animation:dots 1s infinite"></span>
+          <span style="width:4px;height:4px;border-radius:50%;background:#43C9B4;animation:dots 1s infinite .2s"></span>
+          <span style="width:4px;height:4px;border-radius:50%;background:#43C9B4;animation:dots 1s infinite .4s"></span>
+        </span>
+        <span style="font-weight:600;color:#CFF3EC">Listening…</span>
+        <span style="color:#6FBFB1">try “open test results”, “flag this paragraph”, or “read summary to patient”</span>
+        <span onClick="{{ toggleListen }}" style="margin-left:auto;cursor:pointer;font-weight:600;color:#9FE3D7;border:1px solid rgba(159,227,215,.3);padding:3px 10px;border-radius:6px">Stop</span>
+      </div>
+    </sc-if>
+
+    <!-- ===================== SCREEN: PIPELINE ===================== -->
+    <sc-if value="{{ isPipeline }}" hint-placeholder-val="{{ true }}">
+    <div class="sa" style="flex:1;overflow-y:auto;padding:28px 32px 40px">
+
+      <div style="display:flex;align-items:flex-end;gap:18px;margin-bottom:6px">
+        <div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:#0B7E70;text-transform:uppercase;margin-bottom:7px">● Run in progress</div>
+          <h1 style="margin:0;font-size:25px;font-weight:700;letter-spacing:-.02em;color:#101a27">Report pipeline</h1>
+          <p style="margin:7px 0 0;font-size:13.5px;color:#647082;max-width:560px">Five agents read the visit, interpret the data against norms, retrieve supporting evidence, draft the report, and check it — you can watch each hand off its work.</p>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+          <div style="text-align:right;margin-right:4px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500;color:#1b2735;letter-spacing:-.01em">00:41</div>
+            <div style="font-size:11px;color:#8A95A3">elapsed · est. 00:18 left</div>
+          </div>
+          <button style="height:38px;padding:0 14px;border-radius:9px;border:1px solid #DCE0E7;background:#fff;font-size:13px;font-weight:600;color:#5A6675;cursor:pointer;display:flex;align-items:center;gap:7px" style-hover="background:#F0F2F5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 5v14M16 5v14"/></svg>Pause</button>
+          <button onClick="{{ goReport }}" style="height:38px;padding:0 16px;border-radius:9px;border:none;background:#0E9C89;font-size:13px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 1px 2px rgba(11,126,112,.3)" style-hover="background:#0B8576">View draft<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+
+      <!-- progress meter -->
+      <div style="display:flex;align-items:center;gap:14px;margin:20px 0 22px">
+        <div style="flex:1;height:6px;border-radius:4px;background:#E5E8ED;overflow:hidden;position:relative">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:72%;background:linear-gradient(90deg,#0E9C89,#2F5BD0);border-radius:4px"></div>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#647082">3 of 5 complete · Broca drafting</span>
+      </div>
+
+      <!-- ===== AGENT FLOW ===== -->
+      <div style="display:flex;align-items:stretch;gap:0;margin-bottom:26px">
+
+        <!-- Wernicke -->
+        <div style="flex:1 1 0;min-width:184px;background:#fff;border:1px solid #E5E8ED;border-radius:13px;padding:16px 16px 14px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#0B7E70;background:#E3F4F0;padding:3px 7px;border-radius:5px">01</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#0B7E70"><span style="width:7px;height:7px;border-radius:50%;background:#0E9C89"></span>Done</span>
+          </div>
+          <div style="font-size:16.5px;font-weight:700;color:#101a27;margin-top:12px;letter-spacing:-.01em">Wernicke</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;margin-top:3px">Comprehension</div>
+          <p style="font-size:12px;line-height:1.5;color:#56616F;margin:11px 0 0;flex:1">Parsed 42:18 of dictation and 11 score sheets. Extracted chief complaint, 8‑month memory decline, preserved ADLs.</p>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A6B0BD;margin-top:12px;padding-top:10px;border-top:1px solid #EEF0F3">1,840 tokens · 6s</div>
+        </div>
+
+        <!-- connector 1 -->
+        <div style="flex:0 0 30px;align-self:center;height:2px;background:#0E9C89;position:relative"><svg width="9" height="9" viewBox="0 0 24 24" fill="#0E9C89" style="position:absolute;right:-3px;top:-4px"><path d="M8 5l8 7-8 7z"/></svg></div>
+
+        <!-- Norm -->
+        <div style="flex:1 1 0;min-width:184px;background:#fff;border:1px solid #E5E8ED;border-radius:13px;padding:16px 16px 14px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#0B7E70;background:#E3F4F0;padding:3px 7px;border-radius:5px">02</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#0B7E70"><span style="width:7px;height:7px;border-radius:50%;background:#0E9C89"></span>Done</span>
+          </div>
+          <div style="font-size:16.5px;font-weight:700;color:#101a27;margin-top:12px;letter-spacing:-.01em">Norm</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;margin-top:3px">Normative interpretation</div>
+          <p style="font-size:12px;line-height:1.5;color:#56616F;margin:11px 0 0;flex:1">Indexed 11 measures against age‑corrected norms. 4 fall ≥1 SD below expectation, concentrated in delayed memory.</p>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A6B0BD;margin-top:12px;padding-top:10px;border-top:1px solid #EEF0F3">11 measures · 13s</div>
+        </div>
+
+        <div style="flex:0 0 30px;align-self:center;height:2px;background:#0E9C89;position:relative"><svg width="9" height="9" viewBox="0 0 24 24" fill="#0E9C89" style="position:absolute;right:-3px;top:-4px"><path d="M8 5l8 7-8 7z"/></svg></div>
+
+        <!-- Engram -->
+        <div style="flex:1 1 0;min-width:184px;background:#fff;border:1px solid #E5E8ED;border-radius:13px;padding:16px 16px 14px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#2F5BD0;background:#E9EEFB;padding:3px 7px;border-radius:5px">03</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#0B7E70"><span style="width:7px;height:7px;border-radius:50%;background:#0E9C89"></span>Done</span>
+          </div>
+          <div style="font-size:16.5px;font-weight:700;color:#101a27;margin-top:12px;letter-spacing:-.01em">Engram</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;margin-top:3px">Evidence retrieval</div>
+          <p style="font-size:12px;line-height:1.5;color:#56616F;margin:11px 0 0;flex:1">Retrieved 6 references — amnestic MCI criteria, WMS‑IV bands, AAN guideline — and aligned them to the score pattern.</p>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A6B0BD;margin-top:12px;padding-top:10px;border-top:1px solid #EEF0F3">6 sources · 15s</div>
+        </div>
+
+        <!-- connector into running (animated) -->
+        <div style="flex:0 0 30px;align-self:center;height:2px;background:#D8DEE6;position:relative;overflow:visible">
+          <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,#2F5BD0,transparent);background-size:55% 100%;animation:flow 1.5s linear infinite"></div>
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="#2F5BD0" style="position:absolute;right:-3px;top:-4px"><path d="M8 5l8 7-8 7z"/></svg>
+        </div>
+
+        <!-- Broca (running) -->
+        <div style="flex:1 1 0;min-width:184px;background:#fff;border:1.5px solid #2F5BD0;border-radius:13px;padding:16px 16px 14px;display:flex;flex-direction:column;box-shadow:0 6px 22px rgba(47,91,208,.12);animation:ring 2s ease-out infinite">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#2F5BD0;background:#E9EEFB;padding:3px 7px;border-radius:5px">04</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#2F5BD0"><span style="width:7px;height:7px;border-radius:50%;background:#2F5BD0;animation:pulse 1.3s infinite"></span>Running</span>
+          </div>
+          <div style="font-size:16.5px;font-weight:700;color:#101a27;margin-top:12px;letter-spacing:-.01em">Broca</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;margin-top:3px">Drafting</div>
+          <p style="font-size:12px;line-height:1.5;color:#56616F;margin:11px 0 0;flex:1">Composing the report. 4 of 6 sections complete; writing <b style="color:#2F5BD0;font-weight:600">Interpretation</b> now.</p>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5A6FB0;margin-top:12px;padding-top:10px;border-top:1px solid #EBEFF8">4 / 6 sections · 7s</div>
+        </div>
+
+        <!-- connector pending -->
+        <div style="flex:0 0 30px;align-self:center;height:0;border-top:2px dashed #CDD3DB;position:relative"><svg width="9" height="9" viewBox="0 0 24 24" fill="#CDD3DB" style="position:absolute;right:-3px;top:-5px"><path d="M8 5l8 7-8 7z"/></svg></div>
+
+        <!-- Glia (queued) -->
+        <div style="flex:1 1 0;min-width:184px;background:#FBFCFD;border:1px dashed #D5DAE1;border-radius:13px;padding:16px 16px 14px;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#93A0B0;background:#EEF0F3;padding:3px 7px;border-radius:5px">05</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#93A0B0"><span style="width:7px;height:7px;border-radius:50%;background:#C2C9D4"></span>Queued</span>
+          </div>
+          <div style="font-size:16.5px;font-weight:700;color:#6B7686;margin-top:12px;letter-spacing:-.01em">Glia</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#A6B0BD;margin-top:3px">Quality assurance</div>
+          <p style="font-size:12px;line-height:1.5;color:#8A95A3;margin:11px 0 0;flex:1">Waiting for the draft. Will verify consistency, completeness, and normative alignment, then surface anything uncertain.</p>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#B6BFCA;margin-top:12px;padding-top:10px;border-top:1px solid #EEF0F3">queued</div>
+        </div>
+      </div>
+
+      <!-- ===== LIVE OUTPUT + LOG ===== -->
+      <div style="display:flex;gap:18px;align-items:stretch">
+        <!-- live drafting -->
+        <div style="flex:1.5;background:#fff;border:1px solid #E5E8ED;border-radius:13px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+          <div style="display:flex;align-items:center;gap:9px;padding:14px 18px;border-bottom:1px solid #EEF0F3">
+            <span style="width:8px;height:8px;border-radius:50%;background:#2F5BD0;animation:pulse 1.3s infinite"></span>
+            <span style="font-size:13px;font-weight:600;color:#1b2735">Broca is writing</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#93A0B0">· Interpretation</span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:#2F5BD0;background:#E9EEFB;padding:3px 8px;border-radius:5px">LIVE</span>
+          </div>
+          <div style="padding:18px 22px;font-family:'Source Serif 4',Georgia,serif;font-size:14.5px;line-height:1.72;color:#2b3542;flex:1">
+            Overall intellectual functioning falls within the Average range and is consistent with estimated premorbid ability. Against this backdrop, performance is selectively reduced in episodic memory: delayed verbal recall fell in the Borderline range, with limited benefit from recognition cueing — a pattern that points toward an encoding‑type amnestic process<span style="display:inline-block;width:2px;height:16px;background:#2F5BD0;margin-left:2px;vertical-align:-3px;animation:blink 1s step-end infinite"></span>
+          </div>
+          <div style="padding:13px 18px;border-top:1px solid #EEF0F3;background:#FBFCFD">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.07em;color:#93A0B0;margin-bottom:8px">GROUNDED ON — VIA ENGRAM</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <span style="font-size:11px;color:#3a4654;background:#fff;border:1px solid #E0E4EA;padding:4px 9px;border-radius:6px">Petersen — amnestic MCI criteria (2018)</span>
+              <span style="font-size:11px;color:#3a4654;background:#fff;border:1px solid #E0E4EA;padding:4px 9px;border-radius:6px">AAN dementia practice guideline</span>
+              <span style="font-size:11px;color:#3a4654;background:#fff;border:1px solid #E0E4EA;padding:4px 9px;border-radius:6px">WMS‑IV interpretive bands</span>
+              <span style="font-size:11px;color:#3a4654;background:#fff;border:1px solid #E0E4EA;padding:4px 9px;border-radius:6px">DSM‑5‑TR Mild NCD</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- run activity -->
+        <div style="flex:1;background:#fff;border:1px solid #E5E8ED;border-radius:13px;overflow:hidden;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+          <div style="padding:14px 18px;border-bottom:1px solid #EEF0F3;font-size:13px;font-weight:600;color:#1b2735">Run activity</div>
+          <div style="padding:6px 18px 16px">
+            <div style="display:flex;gap:11px;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6B0BD;width:38px;flex:none">00:00</span><span style="font-size:12.5px;color:#56616F">Session received — 42:18 audio, 11 score sheets</span></div>
+            <div style="display:flex;gap:11px;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6B0BD;width:38px;flex:none">00:06</span><span style="font-size:12.5px;color:#56616F"><b style="color:#0B7E70;font-weight:600">Wernicke ✓</b> comprehension complete</span></div>
+            <div style="display:flex;gap:11px;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6B0BD;width:38px;flex:none">00:19</span><span style="font-size:12.5px;color:#56616F"><b style="color:#0B7E70;font-weight:600">Norm ✓</b> 11 measures normed</span></div>
+            <div style="display:flex;gap:11px;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A6B0BD;width:38px;flex:none">00:34</span><span style="font-size:12.5px;color:#56616F"><b style="color:#0B7E70;font-weight:600">Engram ✓</b> 6 references retrieved</span></div>
+            <div style="display:flex;gap:11px;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2F5BD0;width:38px;flex:none">00:41</span><span style="font-size:12.5px;color:#2b3542"><b style="color:#2F5BD0;font-weight:600">Broca ▶</b> drafting (4 / 6 sections)</span></div>
+            <div style="display:flex;gap:11px;padding:10px 0"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#C2C9D4;width:38px;flex:none">—</span><span style="font-size:12.5px;color:#A6B0BD">Glia queued — QA pending</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== SCREEN: REPORT ===================== -->
+    <sc-if value="{{ isReport }}" hint-placeholder-val="{{ false }}">
+    <div class="sa" style="flex:1;overflow-y:auto;background:#EFF1F4">
+      <!-- report toolbar -->
+      <div style="position:sticky;top:0;z-index:5;background:rgba(239,241,244,0.9);backdrop-filter:blur(8px);border-bottom:1px solid #E1E5EB;padding:14px 32px;display:flex;align-items:center;gap:14px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <h1 style="margin:0;font-size:17px;font-weight:700;color:#101a27;letter-spacing:-.01em">Neuropsychological Evaluation</h1>
+            <span style="font-size:11px;font-weight:600;color:#8A6D2E;background:#F7F0DF;border:1px solid #EAD9B5;padding:3px 9px;border-radius:20px">Draft</span>
+          </div>
+          <div style="font-size:12px;color:#8A95A3;margin-top:3px">Last edited just now · autosaved</div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#B5803A;background:#FBF3E2;border:1px solid #ECDCB6;height:34px;padding:0 12px;border-radius:8px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+            Glia: <span>{{ flagCount }}</span> to review
+          </div>
+          <button onClick="{{ openExplain }}" style="display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:8px;border:1px solid #DCE0E7;background:#fff;font-size:12.5px;font-weight:600;color:#0B7E70;cursor:pointer" style-hover="border-color:#0E9C89;background:#F2FAF8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>Explain to patient</button>
+          <button style="height:34px;padding:0 15px;border-radius:8px;border:none;background:#0E9C89;font-size:12.5px;font-weight:600;color:#fff;cursor:pointer" style-hover="background:#0B8576">Finalize</button>
+        </div>
+      </div>
+
+      <!-- report body -->
+      <div style="display:flex;gap:26px;padding:30px 32px 60px;align-items:flex-start;max-width:1180px;margin:0 auto">
+
+        <!-- DOCUMENT -->
+        <article style="flex:1;min-width:0;background:#fff;border:1px solid #E5E8ED;border-radius:4px;box-shadow:0 1px 3px rgba(16,26,39,.06);padding:48px 56px 56px">
+          <!-- patient banner -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:22px;border-bottom:2px solid #101a27;margin-bottom:30px">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;color:#93A0B0;text-transform:uppercase">Confidential · Synthetic record</div>
+              <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:27px;font-weight:700;color:#101a27;margin:9px 0 4px;letter-spacing:-.01em">Neuropsychological Evaluation</h2>
+              <div style="font-size:13px;color:#647082">Eleanor M. Hayes · 69 years · Right‑handed · 16 years education</div>
+            </div>
+            <div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A95A3;line-height:1.9">
+              <div>MRN&nbsp;&nbsp;SYN‑4471</div>
+              <div>DOB&nbsp;&nbsp;14 Mar 1957</div>
+              <div>DOE&nbsp;&nbsp;18 Jun 2026</div>
+              <div>Examiner&nbsp;&nbsp;L. Okafor, PhD</div>
+            </div>
+          </div>
+
+          <!-- Reason for Referral -->
+          <section style="margin-bottom:26px">
+            <h3 style="font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;color:#0B7E70;margin:0 0 9px;letter-spacing:-.005em">Reason for Referral</h3>
+            <p style="font-family:'Source Serif 4',serif;font-size:14.5px;line-height:1.74;color:#2b3542;margin:0">Ms. Hayes is a 69‑year‑old, right‑handed woman with 16 years of education, referred by Neurology (R. Okonkwo, MD) for comprehensive neuropsychological evaluation. The referral concerns an eight‑month history of progressive memory difficulty and seeks to characterize her cognitive profile and help differentiate amnestic mild cognitive impairment from an early neurodegenerative process.</p>
+          </section>
+
+          <!-- History -->
+          <section style="margin-bottom:26px">
+            <h3 style="font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;color:#0B7E70;margin:0 0 9px;letter-spacing:-.005em">History of Presenting Concern</h3>
+            <p style="font-family:'Source Serif 4',serif;font-size:14.5px;line-height:1.74;color:#2b3542;margin:0">The patient and her daughter report insidious onset of forgetfulness over the preceding <span style="background:#FBF1DD;border-bottom:2px solid #D9A441;padding:0 2px;cursor:pointer">eight months<sup style="font-family:'Hanken Grotesk',sans-serif;font-size:9px;font-weight:700;color:#B5803A;margin-left:1px">1</sup></span>, most notable for misplaced items, repeated questions, and increasing reliance on written reminders. Instrumental activities of daily living remain largely independent, though her daughter assumed management of medications two months ago. Medical history is significant for hypertension and hypothyroidism, both stably treated; there is no history of stroke, head injury, or seizure. Family history includes a mother with late‑onset dementia.</p>
+          </section>
+
+          <!-- Behavioral Observations -->
+          <section style="margin-bottom:26px">
+            <h3 style="font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;color:#0B7E70;margin:0 0 9px;letter-spacing:-.005em">Behavioral Observations</h3>
+            <p style="font-family:'Source Serif 4',serif;font-size:14.5px;line-height:1.74;color:#2b3542;margin:0">Ms. Hayes presented as alert, cooperative, and appropriately groomed. Speech was fluent and prosodic with no paraphasic errors. She was oriented to person, place, and situation, with mild uncertainty for the exact date. Effort was adequate and performance‑validity indicators were within acceptable limits. She became mildly anxious during memory tasks but remained engaged throughout.</p>
+          </section>
+
+          <!-- Tests Administered -->
+          <section style="margin-bottom:26px">
+            <h3 style="font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;color:#0B7E70;margin:0 0 11px;letter-spacing:-.005em">Tests Administered</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">WAIS‑IV</span>
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">WMS‑IV</span>
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">RAVLT</span>
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">Trail Making A &amp; B</span>
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">Boston Naming Test</span>
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">Verbal Fluency (FAS / Animals)</span>
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">Stroop</span>
+              <span style="font-size:12px;color:#3a4654;background:#F4F6F8;border:1px solid #E5E8ED;padding:5px 10px;border-radius:6px">MoCA</span>
+            </div>
+          </section>
+
+          <!-- Test Results table -->
+          <section style="margin-bottom:26px">
+            <h3 style="font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;color:#0B7E70;margin:0 0 12px;letter-spacing:-.005em">Test Results</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead>
+                <tr style="border-bottom:1.5px solid #D5DAE1">
+                  <th style="text-align:left;padding:8px 10px 8px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;font-weight:500">Measure</th>
+                  <th style="text-align:right;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;font-weight:500">Std. Score</th>
+                  <th style="text-align:right;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;font-weight:500">%ile</th>
+                  <th style="text-align:left;padding:8px 0 8px 14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#93A0B0;font-weight:500">Classification</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">WAIS‑IV Full Scale IQ</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">98</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">45</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#51607A;background:#EEF1F6;padding:3px 8px;border-radius:5px">Average</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">Verbal Comprehension</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">105</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">63</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#51607A;background:#EEF1F6;padding:3px 8px;border-radius:5px">Average</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">Perceptual Reasoning</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">101</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">53</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#51607A;background:#EEF1F6;padding:3px 8px;border-radius:5px">Average</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">Working Memory</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">90</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">25</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#51607A;background:#EEF1F6;padding:3px 8px;border-radius:5px">Average</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">Processing Speed</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">86</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">18</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#8A6D2E;background:#F7F0DF;padding:3px 8px;border-radius:5px">Low Average</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">WMS‑IV Immediate Memory</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">81</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">10</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#8A6D2E;background:#F7F0DF;padding:3px 8px;border-radius:5px">Low Average</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3;background:#FCF7EF"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:600">WMS‑IV Delayed Memory</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#A85B2A;font-weight:500">73</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#A85B2A">4</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#A85B2A;background:#F9EADD;padding:3px 8px;border-radius:5px">Borderline</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3;background:#FCF7EF"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:600">RAVLT Delayed Recall</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#A85B2A;font-weight:500">70</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#A85B2A">2</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#A85B2A;background:#F9EADD;padding:3px 8px;border-radius:5px">Borderline</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">Boston Naming Test</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">92</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">30</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#51607A;background:#EEF1F6;padding:3px 8px;border-radius:5px">Average</span></td></tr>
+                <tr style="border-bottom:1px solid #EEF0F3"><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">Verbal Fluency (FAS)</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">88</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">21</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#8A6D2E;background:#F7F0DF;padding:3px 8px;border-radius:5px">Low Average</span></td></tr>
+                <tr><td style="padding:9px 10px 9px 0;color:#1b2735;font-weight:500">Trail Making B</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#1b2735">84</td><td style="text-align:right;padding:9px 14px;font-family:'IBM Plex Mono',monospace;color:#647082">14</td><td style="padding:9px 0 9px 14px"><span style="font-size:11.5px;font-weight:600;color:#8A6D2E;background:#F7F0DF;padding:3px 8px;border-radius:5px">Low Average</span></td></tr>
+              </tbody>
+            </table>
+            <div style="font-size:11px;color:#93A0B0;margin-top:10px;font-style:italic">Standard scores: M = 100, SD = 15, age‑corrected. Classification per Heaton conventions. SEM applied; bands indicate confidence, not point certainty.</div>
+          </section>
+
+          <!-- Interpretation -->
+          <section style="margin-bottom:26px">
+            <h3 style="font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;color:#0B7E70;margin:0 0 9px;letter-spacing:-.005em">Interpretation</h3>
+            <p style="font-family:'Source Serif 4',serif;font-size:14.5px;line-height:1.74;color:#2b3542;margin:0">Overall intellectual functioning falls within the Average range and is consistent with estimated premorbid ability. Against this backdrop, memory is <span style="background:#FBF1DD;border-bottom:2px solid #D9A441;padding:0 2px;cursor:pointer">mildly reduced<sup style="font-family:'Hanken Grotesk',sans-serif;font-size:9px;font-weight:700;color:#B5803A;margin-left:1px">2</sup></span> relative to other domains, with delayed verbal recall (RAVLT, WMS‑IV Delayed) falling in the Borderline range and limited benefit from recognition cueing — a pattern suggestive of an encoding‑type amnestic process. Processing speed and aspects of executive set‑shifting are mildly reduced (Low Average) and may be partly secondary to task memory demands. Language and visuospatial reasoning are intact. Affective contribution was <span style="background:#EBF0FB;border-bottom:2px solid #6E93E0;padding:0 2px;cursor:pointer">not formally screened<sup style="font-family:'Hanken Grotesk',sans-serif;font-size:9px;font-weight:700;color:#2F5BD0;margin-left:1px">3</sup></span> this visit. Taken together, the profile is most consistent with amnestic mild cognitive impairment; an early neurodegenerative etiology cannot be excluded and warrants surveillance.</p>
+          </section>
+
+          <!-- Summary -->
+          <section>
+            <h3 style="font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;color:#0B7E70;margin:0 0 9px;letter-spacing:-.005em">Summary &amp; Recommendations</h3>
+            <p style="font-family:'Source Serif 4',serif;font-size:14.5px;line-height:1.74;color:#2b3542;margin:0 0 12px">Ms. Hayes demonstrates a circumscribed amnestic profile on a background of otherwise preserved cognition, most consistent with amnestic mild cognitive impairment. The following are recommended:</p>
+            <ol style="font-family:'Source Serif 4',serif;font-size:14.5px;line-height:1.7;color:#2b3542;margin:0;padding-left:20px">
+              <li style="margin-bottom:6px">Neurology follow‑up with consideration of structural MRI and biomarker assessment.</li>
+              <li style="margin-bottom:6px">Repeat neuropsychological evaluation in 12 months to establish trajectory.</li>
+              <li style="margin-bottom:6px">Cognitive compensatory strategies and caregiver education.</li>
+              <li style="margin-bottom:6px">Medication review for anticholinergic burden.</li>
+              <li>Affective screening (e.g., GDS‑15) at the next visit.</li>
+            </ol>
+          </section>
+        </article>
+
+        <!-- GLIA QA RAIL -->
+        <aside style="width:312px;flex:none;position:sticky;top:88px;display:flex;flex-direction:column;gap:14px">
+          <div style="background:#fff;border:1px solid #E5E8ED;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(16,26,39,.05)">
+            <div style="padding:15px 17px;border-bottom:1px solid #EEF0F3;display:flex;align-items:center;gap:9px">
+              <div style="width:26px;height:26px;border-radius:7px;background:#EAF0FB;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2F5BD0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 3 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg></div>
+              <div style="line-height:1.3">
+                <div style="font-size:13px;font-weight:700;color:#1b2735">Glia · Quality assurance</div>
+                <div style="font-size:11px;color:#8A95A3;margin-top:2px">Human‑in‑the‑loop review</div>
+              </div>
+            </div>
+            <div style="padding:12px 17px;border-bottom:1px solid #EEF0F3;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#56616F"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0E9C89" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Normative alignment verified</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#56616F"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0E9C89" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>All required sections present</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#56616F"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B5803A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><span style="font-weight:600;color:#3a4654"><span>{{ flagCount }}</span> items need your judgement</span></div>
+            </div>
+
+            <div style="padding:13px 14px;display:flex;flex-direction:column;gap:11px">
+              <sc-for list="{{ flags }}" as="f" hint-placeholder-count="3">
+                <div style="border:1px solid {{ f.bord }};background:{{ f.soft }};border-radius:10px;padding:12px 13px">
+                  <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:{{ f.accent }};border:1px solid {{ f.bord }};padding:2px 6px;border-radius:5px;background:#fff">{{ f.label }}</span>
+                    <span style="font-size:10.5px;color:#8A95A3">{{ f.section }}</span>
+                  </div>
+                  <div style="font-size:12.5px;font-weight:600;color:#1b2735;margin-bottom:4px">{{ f.title }}</div>
+                  <div style="font-size:11.5px;line-height:1.5;color:#56616F">{{ f.detail }}</div>
+                  <div style="display:flex;gap:8px;margin-top:11px">
+                    <button onClick="{{ f.onAccept }}" style="flex:1;height:30px;border-radius:7px;border:none;background:{{ f.accent }};color:#fff;font-size:11.5px;font-weight:600;cursor:pointer">Resolve</button>
+                    <button onClick="{{ f.onDismiss }}" style="flex:1;height:30px;border-radius:7px;border:1px solid #DCE0E7;background:#fff;color:#647082;font-size:11.5px;font-weight:600;cursor:pointer">Dismiss</button>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ noFlags }}" hint-placeholder-val="{{ false }}">
+                <div style="text-align:center;padding:26px 12px">
+                  <div style="width:42px;height:42px;border-radius:50%;background:#E3F4F0;display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E9C89" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+                  <div style="font-size:13px;font-weight:600;color:#1b2735">All clear</div>
+                  <div style="font-size:11.5px;color:#8A95A3;margin-top:3px">No outstanding flags. Glia found nothing else to verify.</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== SCREEN: INTAKE ===================== -->
+    <sc-if value="{{ isIntake }}" hint-placeholder-val="{{ false }}">
+    <div class="sa" style="flex:1;overflow-y:auto;padding:28px 32px 40px">
+      <div style="max-width:1120px;margin:0 auto">
+        <div style="margin-bottom:22px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:#93A0B0;text-transform:uppercase;margin-bottom:7px">New session</div>
+          <h1 style="margin:0;font-size:25px;font-weight:700;letter-spacing:-.02em;color:#101a27">Capture the visit</h1>
+          <p style="margin:7px 0 0;font-size:13.5px;color:#647082">Dictate or upload the session, attach structured test data, then hand it to the pipeline.</p>
+        </div>
+
+        <div style="display:flex;gap:20px;align-items:flex-start">
+          <!-- left capture column -->
+          <div style="flex:1.6;min-width:0;display:flex;flex-direction:column;gap:18px">
+            <!-- dictation -->
+            <div style="background:#fff;border:1px solid #E5E8ED;border-radius:13px;overflow:hidden;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+              <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #EEF0F3;gap:8px">
+                <span style="font-size:13.5px;font-weight:600;color:#1b2735">Visit capture</span>
+                <div style="margin-left:auto;display:flex;gap:4px;background:#F0F2F5;border-radius:8px;padding:3px">
+                  <span style="font-size:12px;font-weight:600;color:#fff;background:#0E9C89;padding:5px 12px;border-radius:6px">Live dictation</span>
+                  <span style="font-size:12px;font-weight:600;color:#647082;padding:5px 12px;border-radius:6px;cursor:pointer">Upload</span>
+                </div>
+              </div>
+              <div style="padding:20px 18px">
+                <div style="display:flex;align-items:center;gap:16px">
+                  <button style="width:52px;height:52px;border-radius:50%;border:none;background:#C0524A;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;box-shadow:0 2px 8px rgba(192,82,74,.3);animation:ring 2s ease-out infinite"><span style="width:15px;height:15px;border-radius:3px;background:#fff"></span></button>
+                  <div style="flex:1;display:flex;align-items:center;gap:2px;height:46px;overflow:hidden">
+                    <sc-for list="{{ bars }}" as="b" hint-placeholder-count="46">
+                      <span style="flex:1;min-width:2px;height:{{ b.h }};border-radius:2px;background:{{ b.c }};transform-origin:center;animation:wave 1s ease-in-out infinite;animation-delay:{{ b.d }}"></span>
+                    </sc-for>
+                  </div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:17px;color:#1b2735;flex:none">14:22</div>
+                </div>
+                <div style="margin-top:18px;background:#FBFCFD;border:1px solid #EEF0F3;border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.7;color:#3a4654;font-family:'Source Serif 4',serif">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.07em;color:#93A0B0;display:block;margin-bottom:8px">LIVE TRANSCRIPT · WERNICKE LISTENING</span>
+                  “…she reports that the forgetfulness has been getting worse over the last several months. Her daughter notes she repeats questions and has been relying on notes. Daily activities are mostly intact, though medications are now managed by family<span style="display:inline-block;width:2px;height:14px;background:#0E9C89;margin-left:2px;vertical-align:-2px;animation:blink 1s step-end infinite"></span>”
+                </div>
+              </div>
+            </div>
+
+            <!-- test data -->
+            <div style="background:#fff;border:1px solid #E5E8ED;border-radius:13px;overflow:hidden;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+              <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid #EEF0F3">
+                <span style="font-size:13.5px;font-weight:600;color:#1b2735">Structured test data</span>
+                <span style="margin-left:8px;font-size:11px;color:#0B7E70;background:#E3F4F0;padding:2px 8px;border-radius:20px;font-weight:600">3 files parsed</span>
+                <button style="margin-left:auto;font-size:12px;font-weight:600;color:#0E9C89;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add battery</button>
+              </div>
+              <div style="padding:6px 18px 14px">
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F2F4F6"><div style="width:32px;height:32px;border-radius:8px;background:#F0F2F5;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#647082" stroke-width="1.7"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg></div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#1b2735">WAIS‑IV_scores.csv</div><div style="font-size:11px;color:#93A0B0">5 indices · normed by Norm</div></div><span style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#0B7E70"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Parsed</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F2F4F6"><div style="width:32px;height:32px;border-radius:8px;background:#F0F2F5;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#647082" stroke-width="1.7"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg></div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#1b2735">WMS‑IV_memory.pdf</div><div style="font-size:11px;color:#93A0B0">Immediate &amp; delayed indices</div></div><span style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#0B7E70"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Parsed</span></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 0"><div style="width:32px;height:32px;border-radius:8px;background:#F0F2F5;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#647082" stroke-width="1.7"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></svg></div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#1b2735">EF_language_battery.xlsx</div><div style="font-size:11px;color:#93A0B0">Trails, BNT, fluency, Stroop</div></div><span style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#0B7E70"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Parsed</span></div>
+                <!-- empty dropzone -->
+                <div style="margin-top:8px;border:1.5px dashed #D5DAE1;border-radius:10px;padding:16px;text-align:center;color:#93A0B0"><div style="font-size:12px;font-weight:500;color:#647082">Drop additional score sheets</div><div style="font-size:11px;margin-top:2px">CSV, PDF, or XLSX · de‑identified on upload</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- right context column -->
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:18px">
+            <div style="background:#fff;border:1px solid #E5E8ED;border-radius:13px;overflow:hidden;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+              <div style="padding:14px 18px;border-bottom:1px solid #EEF0F3;font-size:13.5px;font-weight:600;color:#1b2735">Patient context</div>
+              <div style="padding:6px 18px 16px">
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-size:12.5px;color:#8A95A3">Name</span><span style="font-size:12.5px;font-weight:500;color:#1b2735">Eleanor M. Hayes</span></div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-size:12.5px;color:#8A95A3">Age / Sex</span><span style="font-size:12.5px;font-weight:500;color:#1b2735">69 · Female</span></div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-size:12.5px;color:#8A95A3">Handedness</span><span style="font-size:12.5px;font-weight:500;color:#1b2735">Right</span></div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-size:12.5px;color:#8A95A3">Education</span><span style="font-size:12.5px;font-weight:500;color:#1b2735">16 years</span></div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F2F4F6"><span style="font-size:12.5px;color:#8A95A3">Referral</span><span style="font-size:12.5px;font-weight:500;color:#1b2735">Neurology · R. Okonkwo</span></div>
+                <div style="padding:10px 0"><span style="font-size:12.5px;color:#8A95A3;display:block;margin-bottom:4px">Presenting concern</span><span style="font-size:12.5px;color:#3a4654;line-height:1.5">8‑month progressive memory decline; r/o amnestic MCI vs. early neurodegenerative.</span></div>
+              </div>
+            </div>
+
+            <!-- readiness -->
+            <div style="background:#fff;border:1px solid #E5E8ED;border-radius:13px;padding:16px 18px;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+              <div style="font-size:13.5px;font-weight:600;color:#1b2735;margin-bottom:12px">Ready to generate</div>
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><span style="width:18px;height:18px;border-radius:50%;background:#0E9C89;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span style="font-size:12.5px;color:#3a4654">Transcript captured</span></div>
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><span style="width:18px;height:18px;border-radius:50%;background:#0E9C89;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span style="font-size:12.5px;color:#3a4654">Test data parsed (11 measures)</span></div>
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px"><span style="width:18px;height:18px;border-radius:50%;background:#0E9C89;display:flex;align-items:center;justify-content:center;flex:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></span><span style="font-size:12.5px;color:#3a4654">Consent on file</span></div>
+              <button onClick="{{ goPipeline }}" style="width:100%;height:44px;border-radius:10px;border:none;background:#0E9C89;color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 2px 8px rgba(11,126,112,.25)" style-hover="background:#0B8576">Generate report<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              <button style="width:100%;height:38px;margin-top:9px;border-radius:10px;border:1px solid #DCE0E7;background:#fff;color:#647082;font-size:13px;font-weight:600;cursor:pointer">Save draft</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===================== SCREEN: HISTORY ===================== -->
+    <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+    <div class="sa" style="flex:1;overflow-y:auto;padding:28px 32px 40px">
+      <div style="max-width:920px;margin:0 auto">
+        <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:24px">
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:#93A0B0;text-transform:uppercase;margin-bottom:7px">Patient record</div>
+            <h1 style="margin:0;font-size:25px;font-weight:700;letter-spacing:-.02em;color:#101a27">Eleanor M. Hayes</h1>
+            <p style="margin:7px 0 0;font-size:13.5px;color:#647082">69F · MRN SYN‑4471 · 4 encounters on file · referred by Neurology</p>
+          </div>
+          <div style="margin-left:auto;background:#fff;border:1px solid #E5E8ED;border-radius:12px;padding:13px 18px;box-shadow:0 1px 2px rgba(16,26,39,.03)">
+            <div style="font-size:11px;color:#8A95A3;margin-bottom:8px">MoCA trend</div>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:38px">
+              <div style="width:14px;height:90%;background:#0E9C89;border-radius:3px"></div>
+              <div style="width:14px;height:80%;background:#5BBBAB;border-radius:3px"></div>
+              <div style="width:14px;height:66%;background:#D9A441;border-radius:3px"></div>
+              <div style="width:14px;height:58%;background:#C0524A;border-radius:3px"></div>
+            </div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A6B0BD;margin-top:6px">28 → 27 → 24 → 22</div>
+          </div>
+        </div>
+
+        <!-- timeline -->
+        <div style="position:relative;padding-left:30px">
+          <div style="position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:#E1E5EB"></div>
+
+          <div style="position:relative;margin-bottom:16px">
+            <div style="position:absolute;left:-29px;top:18px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #2F5BD0"></div>
+            <div style="background:#fff;border:1px solid #D6DEEC;border-radius:12px;padding:16px 18px;box-shadow:0 2px 10px rgba(47,91,208,.07)">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2F5BD0">18 Jun 2026</span><span style="font-size:11px;font-weight:600;color:#8A6D2E;background:#F7F0DF;border:1px solid #EAD9B5;padding:2px 8px;border-radius:20px">Draft</span><span style="margin-left:auto;font-size:11px;color:#8A95A3">Today</span></div>
+              <div style="font-size:14.5px;font-weight:600;color:#101a27;margin-bottom:4px">Comprehensive Neuropsychological Evaluation</div>
+              <div style="font-size:12.5px;color:#56616F;line-height:1.5">Full battery. Amnestic profile — delayed recall Borderline; other domains preserved. Impression: amnestic MCI.</div>
+              <div style="display:flex;gap:10px;margin-top:12px"><button onClick="{{ goReport }}" style="font-size:12px;font-weight:600;color:#fff;background:#2F5BD0;border:none;border-radius:7px;padding:7px 13px;cursor:pointer">Open draft</button><button style="font-size:12px;font-weight:600;color:#647082;background:#fff;border:1px solid #DCE0E7;border-radius:7px;padding:7px 13px;cursor:pointer">Compare</button></div>
+            </div>
+          </div>
+
+          <div style="position:relative;margin-bottom:16px">
+            <div style="position:absolute;left:-29px;top:18px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #C2C9D4"></div>
+            <div style="background:#fff;border:1px solid #E5E8ED;border-radius:12px;padding:16px 18px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A95A3">02 Dec 2025</span><span style="font-size:11px;font-weight:600;color:#0B7E70;background:#E3F4F0;padding:2px 8px;border-radius:20px">Final</span></div>
+              <div style="font-size:14.5px;font-weight:600;color:#101a27;margin-bottom:4px">Cognitive screening — follow‑up</div>
+              <div style="font-size:12.5px;color:#56616F;line-height:1.5">MoCA 24/30. Mild decline from baseline, predominantly delayed recall. Recommended full evaluation.</div>
+              <div style="display:flex;gap:10px;margin-top:12px"><button style="font-size:12px;font-weight:600;color:#647082;background:#fff;border:1px solid #DCE0E7;border-radius:7px;padding:7px 13px;cursor:pointer">Open report</button></div>
+            </div>
+          </div>
+
+          <div style="position:relative;margin-bottom:16px">
+            <div style="position:absolute;left:-29px;top:18px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #C2C9D4"></div>
+            <div style="background:#fff;border:1px solid #E5E8ED;border-radius:12px;padding:16px 18px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A95A3">15 Jun 2025</span><span style="font-size:11px;font-weight:600;color:#0B7E70;background:#E3F4F0;padding:2px 8px;border-radius:20px">Final</span></div>
+              <div style="font-size:14.5px;font-weight:600;color:#101a27;margin-bottom:4px">Initial consultation</div>
+              <div style="font-size:12.5px;color:#56616F;line-height:1.5">Memory complaint raised by family. MoCA 27/30. Baseline labs and thyroid panel ordered.</div>
+              <div style="display:flex;gap:10px;margin-top:12px"><button style="font-size:12px;font-weight:600;color:#647082;background:#fff;border:1px solid #DCE0E7;border-radius:7px;padding:7px 13px;cursor:pointer">Open note</button></div>
+            </div>
+          </div>
+
+          <div style="position:relative">
+            <div style="position:absolute;left:-29px;top:18px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #C2C9D4"></div>
+            <div style="background:#fff;border:1px solid #E5E8ED;border-radius:12px;padding:16px 18px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8A95A3">10 Sep 2024</span><span style="font-size:11px;font-weight:600;color:#647082;background:#F0F2F5;padding:2px 8px;border-radius:20px">Intake</span></div>
+              <div style="font-size:14.5px;font-weight:600;color:#101a27;margin-bottom:4px">Referral intake</div>
+              <div style="font-size:12.5px;color:#56616F;line-height:1.5">Established care. PMH hypertension, hypothyroidism. Family history of late‑onset dementia recorded.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <!-- ===================== EXPLAIN-TO-PATIENT OVERLAY ===================== -->
+  <sc-if value="{{ explainOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:50;background:rgba(11,18,32,0.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px" onClick="{{ closeExplain }}">
+      <div style="width:560px;max-width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.3)">
+        <div style="background:linear-gradient(140deg,#0E9C89,#0B7E70);padding:24px 26px;color:#fff;position:relative">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.12em;opacity:.85;margin-bottom:8px">PLAIN‑LANGUAGE · READ ALOUD</div>
+          <div style="font-size:19px;font-weight:700;letter-spacing:-.01em">For Eleanor — what today's results mean</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:18px">
+            <button style="width:48px;height:48px;border-radius:50%;background:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0B7E70"><path d="M7 5l12 7-12 7z"/></svg></button>
+            <div style="flex:1;display:flex;align-items:center;gap:2px;height:30px">
+              <span style="flex:1;height:40%;background:rgba(255,255,255,.6);border-radius:2px;animation:wave 1s infinite"></span>
+              <span style="flex:1;height:75%;background:rgba(255,255,255,.85);border-radius:2px;animation:wave 1s infinite .12s"></span>
+              <span style="flex:1;height:55%;background:rgba(255,255,255,.6);border-radius:2px;animation:wave 1s infinite .24s"></span>
+              <span style="flex:1;height:90%;background:#fff;border-radius:2px;animation:wave 1s infinite .36s"></span>
+              <span style="flex:1;height:50%;background:rgba(255,255,255,.6);border-radius:2px;animation:wave 1s infinite .48s"></span>
+              <span style="flex:1;height:70%;background:rgba(255,255,255,.8);border-radius:2px;animation:wave 1s infinite .6s"></span>
+              <span style="flex:1;height:35%;background:rgba(255,255,255,.5);border-radius:2px;animation:wave 1s infinite .72s"></span>
+              <span style="flex:1;height:60%;background:rgba(255,255,255,.7);border-radius:2px;animation:wave 1s infinite .84s"></span>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;opacity:.9">0:48</span>
+          </div>
+        </div>
+        <div style="padding:24px 26px">
+          <p style="font-size:14.5px;line-height:1.7;color:#2b3542;margin:0 0 14px">Most parts of your thinking are working well — your problem‑solving, language, and reasoning are right where we'd expect for your age.</p>
+          <p style="font-size:14.5px;line-height:1.7;color:#2b3542;margin:0 0 14px">The main thing we noticed is <b>memory for new information</b>. Remembering things after a short delay was harder than the rest, and that's the part we want to keep an eye on.</p>
+          <p style="font-size:14.5px;line-height:1.7;color:#2b3542;margin:0">This isn't a final diagnosis on its own. The next step is a follow‑up with your neurologist, and we'll check again in about a year to see how things are going.</p>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid #EEF0F3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93A0B0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span style="font-size:11.5px;color:#8A95A3;flex:1">Generated from the final report · simplified to ~6th‑grade reading level for patient understanding.</span>
+            <button onClick="{{ closeExplain }}" style="font-size:12.5px;font-weight:600;color:#fff;background:#0E9C89;border:none;border-radius:8px;padding:8px 16px;cursor:pointer">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'pipeline',
+    listening: false,
+    explainOpen: false,
+    flags: [
+      { id:'f1', section:'Interpretation', severity:'verify', title:'Severity language vs. score range', detail:'Draft reads \u201cmildly reduced,\u201d yet WMS\u2011IV Delayed (73) and RAVLT Delayed (70) fall in the Borderline range. Confirm intended severity.' },
+      { id:'f2', section:'Interpretation', severity:'note', title:'Mood not formally screened', detail:'No affective measure (e.g., GDS\u201115) in the attached battery. Findings are attributed to cognition; consider noting screening was deferred.' },
+      { id:'f3', section:'History', severity:'verify', title:'Onset date is ambiguous', detail:'Dictation says \u201cabout eight months,\u201d while the intake form notes \u201csince last fall.\u201d Reconcile the reported onset.' }
+    ]
+  };
+
+  nav(k){
+    const on = this.state.screen === k;
+    return { bg: on ? 'rgba(255,255,255,0.07)' : 'transparent', bar: on ? '#0E9C89' : 'transparent', col: on ? '#FFFFFF' : '#909BAA' };
+  }
+
+  renderVals(){
+    const s = this.state.screen;
+    const set = (screen) => () => this.setState({ screen });
+    const flags = this.state.flags.map(f => ({
+      ...f,
+      accent: f.severity === 'verify' ? '#B5803A' : '#2F5BD0',
+      soft:   f.severity === 'verify' ? '#FBF3E2' : '#EAEFFB',
+      bord:   f.severity === 'verify' ? '#ECDCB6' : '#CDD9F4',
+      label:  f.severity === 'verify' ? 'Needs review' : 'Note',
+      onAccept: () => this.setState(v => ({ flags: v.flags.filter(x => x.id !== f.id) })),
+      onDismiss: () => this.setState(v => ({ flags: v.flags.filter(x => x.id !== f.id) }))
+    }));
+    const bars = Array.from({ length: 46 }, (_, i) => {
+      const h = 14 + Math.round(30 * Math.abs(Math.sin(i * 0.7) * Math.cos(i * 0.3)));
+      return { h: h + 'px', d: (i * 0.045).toFixed(2) + 's', c: i < 30 ? '#0E9C89' : '#CBD3DC' };
+    });
+    return {
+      isPipeline: s === 'pipeline', isIntake: s === 'intake', isReport: s === 'report', isHistory: s === 'history',
+      goPipeline: set('pipeline'), goIntake: set('intake'), goReport: set('report'), goHistory: set('history'),
+      navIntake: this.nav('intake'), navPipe: this.nav('pipeline'), navReport: this.nav('report'), navHistory: this.nav('history'),
+      listening: this.state.listening,
+      toggleListen: () => this.setState(v => ({ listening: !v.listening })),
+      listenBg: this.state.listening ? '#0E9C89' : '#fff',
+      listenCol: this.state.listening ? '#04251F' : '#5A6675',
+      explainOpen: this.state.explainOpen,
+      openExplain: () => this.setState({ explainOpen: true }),
+      closeExplain: () => this.setState({ explainOpen: false }),
+      flags,
+      flagCount: this.state.flags.length,
+      noFlags: this.state.flags.length === 0,
+      bars
+    };
+  }
+}
+</script>
+</body>
+</html>

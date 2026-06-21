@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: var(--font-hanken), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: var(--font-source-serif), Georgia, serif;
+  --font-mono: var(--font-ibm-mono), ui-monospace, monospace;
+  --cortex-bg: #f5f6f8;
+  --cortex-text: #101a27;
+  --cortex-teal: #0e9c89;
+  --cortex-teal-dark: #0b7e70;
+  --cortex-blue: #2f5bd0;
+  --cortex-nav: #0b1220;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--cortex-bg);
+  color: var(--cortex-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #cfebe6;
+}
+
+@keyframes flow {
+  from {
+    background-position: -30% 0;
+  }
+  to {
+    background-position: 130% 0;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.78);
+  }
+}
+
+@keyframes ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(47, 91, 208, 0.28);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(47, 91, 208, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(47, 91, 208, 0);
+  }
+}
+
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes dots {
+  0% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.25;
+  }
+}
+
+.sa::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+.sa::-webkit-scrollbar-thumb {
+  background: #d7dce4;
+  border-radius: 7px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.sa::-webkit-scrollbar-thumb:hover {
+  background: #c2c9d4;
+  background-clip: padding-box;
+}
+
+.cortex-hover-light:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.cortex-btn-hover:hover {
+  background: #f0f2f5 !important;
+}
+
+.cortex-teal-btn:hover {
+  background: #0b8576 !important;
+}
+
+.cortex-teal-outline:hover {
+  border-color: #0e9c89 !important;
+  background: #f2faf8 !important;
+}
+
+.cortex-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}

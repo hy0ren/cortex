@@ -71,6 +71,13 @@ export type CortexEnv = {
   glia: {
     enabled: boolean;
   };
+  terac: {
+    apiKey: string;
+    baseUrl: string;
+    projectId: string;
+    appBaseUrl: string;
+    reviewSecret: string;
+  };
   evalVariant: string;
 };
 
@@ -150,6 +157,13 @@ export function getEnv(): CortexEnv {
     },
     glia: {
       enabled: optionalEnv("GLIA_ENABLED", "true") !== "false",
+    },
+    terac: {
+      apiKey: optionalEnv("TERAC_API_KEY"),
+      baseUrl: optionalEnv("TERAC_BASE_URL", "https://terac.com/api/external/v2"),
+      projectId: optionalEnv("TERAC_PROJECT_ID"),
+      appBaseUrl: optionalEnv("TERAC_APP_BASE_URL", optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")),
+      reviewSecret: optionalEnv("TERAC_REVIEW_SECRET"),
     },
     evalVariant: optionalEnv("EVAL_VARIANT", "glia-on"),
   };

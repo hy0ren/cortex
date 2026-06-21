@@ -150,4 +150,8 @@ export const RedisKeys = {
   encounter: (id: string) => `cortex:encounter:${id}`,
   patientEncounters: (patientId: string) => `cortex:patient:${patientId}:encounters`,
   pipelineRun: (id: string) => `cortex:pipeline:${id}`,
+  annotationPacket: (runId: string) => `cortex:annotation-packet:${runId}`,
+  annotation: (id: string) => `cortex:annotation:${id}`,
+  pipelineAnnotations: (runId: string) => `cortex:pipeline:${runId}:annotations`,
+  annotationIndex: () => "cortex:annotations:index",
 } as const;

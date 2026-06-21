@@ -26,6 +26,15 @@ export type {
 } from "./domain";
 
 export type {
+  AnnotationPacket,
+  AnnotationResult,
+  AnnotationVerdict,
+  FlagAnnotation,
+  FlagAnnotationVerdict,
+  StageAnnotation,
+} from "./annotations";
+
+export type {
   ApiFailure,
   ApiResponse,
   ApiSuccess,

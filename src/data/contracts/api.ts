@@ -12,6 +12,7 @@ export type RuntimeCapabilities = {
   arize: RuntimeMode;
   sentry: RuntimeMode;
   band: RuntimeMode;
+  terac: RuntimeMode;
 };
 
 export type AuthUser = {
